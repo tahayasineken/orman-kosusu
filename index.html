@@ -228,7 +228,7 @@
     <div class="row"><button class="big purple" id="settingsBtn">⚙️ AYARLAR</button><button class="big orange" id="ideaBtn">💡 FİKRİM VAR</button></div>
     <div class="stats small" id="mStats"></div>
   </div>
-  <div id="verTag">v11</div>
+  <div id="verTag">v12</div>
 </div>
 
 <!-- GARAJ -->
@@ -237,8 +237,7 @@
   <div class="spacer"></div>
   <div class="panel">
     <div class="tabs">
-      <button data-tab="animal" class="on">Karakter</button>
-      <button data-tab="vehicle">Araç</button>
+      <button data-tab="vehicle" class="on">Araç</button>
       <button data-tab="armor">Zırh</button>
       <button data-tab="power">Güç</button>
       <button data-tab="chest">🎁 Sandık</button>
@@ -280,7 +279,6 @@
     <div class="small" style="text-align:center">Sıralama en iyi tek koşuya göre. Süreler dakika.</div>
     <div id="famStatus"></div>
     <div class="row"><button class="big blue" id="famBtn">👨‍👩‍👧 AİLE BAĞLANTISI</button></div>
-    <div class="row"><button class="big green" id="shareBest">📤 REKORUMU PAYLAŞ</button></div>
   </div>
   <div class="spacer"></div>
 </div>
@@ -309,7 +307,7 @@
     <div class="lvrow"><div class="lvbig" id="ovLv">1</div><div class="lvinfo"><b id="ovLvText">Seviye 1</b><div class="xpbar"><i id="ovXpBar"></i></div></div></div>
     <div id="ovUnlock"></div>
     <div class="row" id="contRow"><button class="big purple" id="contBtn">▶ BÖLÜM 1'DEN DEVAM</button></div>
-    <div class="row"><button class="big green" id="againBtn">BAŞTAN</button><button class="big gold" id="shareBtn">📤 PAYLAŞ</button></div>
+    <div class="row"><button class="big green" id="againBtn">BAŞTAN</button></div>
     <div class="row"><button class="big blue" id="oGarageBtn">🛠️ GARAJ</button><button class="big orange" id="oMenuBtn">MENÜ</button></div>
   </div>
 </div>
@@ -401,13 +399,14 @@ const ITEMS = {
   ]
 };
 const itemById = (cat, id) => ITEMS[cat].find(i => i.id === id) || ITEMS[cat][0];
-function unlocksAt(L) { const r = []; Object.keys(ITEMS).forEach(c => ITEMS[c].forEach(i => { if (i.lv === L) r.push({ cat: c, item: i }); })); return r; }
+function unlocksAt(L) { const r = []; Object.keys(ITEMS).forEach(c => { if (c !== 'animal') ITEMS[c].forEach(i => { if (i.lv === L) r.push({ cat: c, item: i }); }); }); if (typeof BIOMES !== 'undefined') BIOMES.forEach(b => { if (BIOME_LV[b.key] === L && L > 1) { const a = itemById('animal', BIOME_ANIMAL[b.key]); r.unshift({ cat: 'map', item: { icon: b.flag + a.icon, name: b.name + ' (' + a.name + ')', lv: L } }); } }); return r; }
 function nextUnlock(L) { for (let k = L + 1; k < 40; k++) { const u = unlocksAt(k); if (u.length) return { lv: k, list: u }; } return null; }
 const curLevel = () => levelOf(P ? P.xp : 0);
 function owns(cat, id) { return !!(P && P.owned && P.owned[cat] && P.owned[cat].includes(id)); }
 function powerOn(id) { return P && owns('power', id) && P[id]; }
 function ensureOwned(p) { if (p.owned) return; const L = levelOf(p.xp); p.owned = {}; ['animal', 'vehicle', 'armor', 'power', 'hat'].forEach(c => p.owned[c] = ITEMS[c].filter(i => i.lv <= L || !i.price).map(i => i.id)); p.coins = p.coins || Math.floor((p.collected || 0) * .5); }
-const foodOf = () => FOOD[itemById('animal', P.animal).food];
+const RA = () => G.animal || P.animal;   // v12: koşudaki hayvan haritaya göre değişir
+const foodOf = () => FOOD[itemById('animal', RA()).food];
 const ANIMAL_IDS = ITEMS.animal.map(a => a.id);
 const abType = k => (ITEMS.animal.find(a => a.id === k) || {}).ab || k;   // hop, dash, glide, frog, leap, kite
 const isDash = () => G.abilKind && abType(G.abilKind) === 'dash';
@@ -847,15 +846,16 @@ const TEX = {
 TEX.waterRoad = TEX.water.clone(); TEX.waterRoad.needsUpdate = true;
 const SEG_LEN = 20, ROAD_W = 7.6, LANE_X = [-2.3, 0, 2.3];
 const roadMats = {};
-function roadMat(key) { if (!roadMats[key]) { const t = TEX[key]; t.repeat.set(1, 1); roadMats[key] = new THREE.MeshLambertMaterial({ map: t }); MC['road_' + key] = roadMats[key]; } return roadMats[key]; }
+function roadMat(key) { if (!roadMats[key]) { const t = TEX[key]; t.repeat.set(1, t.userData.rep || 1); roadMats[key] = new THREE.MeshLambertMaterial({ map: t }); MC['road_' + key] = roadMats[key]; } return roadMats[key]; }
 const GEO_SEG = (() => { const g = new THREE.PlaneGeometry(ROAD_W, SEG_LEN); g.rotateX(-Math.PI / 2); return g; })();
 const GEO_SEGX = (() => { const g = GEO_SEG.clone(); g.rotateY(Math.PI / 2); return g; })();
 const GEO_SQ = (() => { const g = new THREE.PlaneGeometry(ROAD_W, ROAD_W); g.rotateX(-Math.PI / 2); return g; })();
 const sideMat = new THREE.MeshLambertMaterial({ map: TEX.grassTr }); MC.side = sideMat;
 const side = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), sideMat); side.rotation.x = -Math.PI / 2; side.position.y = -.06; side.receiveShadow = true; scene.add(side);
 /* v10: Gemini ile üretilmiş el boyaması dokular (yüklenemezse çizilmiş dokular kalır) */
-const GEM_ROAD = { dirt: 1, jungle: 1, sand: 1, redsand: 1, snowroad: 1, cobble: 0, stone: 0, planks: 0 };
-const GEM_GROUND = ['grassTr', 'grassMy', 'grassAf', 'tan', 'desert', 'snow'];
+const GEM_ROAD = { dirt: 1, jungle: 1, sand: 1, redsand: 1, snowroad: 1, cobble: 0, stone: 0, planks: 0, cloudRoad: 1, dreamRoad: 1, candyRoad: 1 };
+const GEM_GROUND = ['grassTr', 'grassMy', 'grassAf', 'tan', 'desert', 'snow', 'cloudSide', 'dreamSide', 'candySide'];
+Object.assign(TEX, { cloudRoad: canvasTex(256, 256, roadDraw('#f4f8ff', ['#e2eeff', '#ffffff'], 'rgba(110,160,215,.4)')), dreamRoad: canvasTex(256, 256, roadDraw('#8a6ad0', ['#a58ae0', '#ffd6ff'], 'rgba(255,220,255,.5)')), candyRoad: canvasTex(256, 256, roadDraw('#ff8fb4', ['#ffffff', '#7fd6ff', '#ffe066'], 'rgba(255,255,255,.6)')), cloudSide: canvasTex(256, 256, (x, w, h) => { x.fillStyle = '#f6f8ff'; x.fillRect(0, 0, w, h); }), dreamSide: canvasTex(256, 256, (x, w, h) => { x.fillStyle = '#3a2a7a'; x.fillRect(0, 0, w, h); speckle(x, w, h, ['#ffd6ff', '#9fe8ff'], 300, 3); }), candySide: canvasTex(256, 256, (x, w, h) => { x.fillStyle = '#8fe3c0'; x.fillRect(0, 0, w, h); speckle(x, w, h, ['#ff6f91', '#ffd23f', '#7fd6ff'], 400, 4); }) });
 async function loadTextures() {
   const ld = k => new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = 'textures/' + k + '.jpg'; });
   const maxA = renderer.capabilities.getMaxAnisotropy();
@@ -863,11 +863,11 @@ async function loadTextures() {
     const im = await ld(k); if (!im || !TEX[k]) return;
     let src = im;
     if (k in GEM_ROAD) {
-      const c = document.createElement('canvas'); c.width = 512; c.height = 1536; const x = c.getContext('2d');
-      for (let i = 0; i < 3; i++) x.drawImage(im, 0, i * 512, 512, 512);
-      if (k === 'snowroad') { x.fillStyle = 'rgba(240,247,255,.5)'; x.fillRect(0, 0, 512, 1536); }
-      if (GEM_ROAD[k]) { x.fillStyle = k === 'snowroad' ? 'rgba(110,160,215,.4)' : 'rgba(255,245,220,.5)'; [.333, .667].forEach(u => { for (let j = 0; j < 2; j++) x.fillRect(512 * u - 6, j * 768 + 154, 12, 384); }); }
-      src = c;
+      const S = Math.min(1024, im.width), c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d');
+      x.drawImage(im, 0, 0, S, S);
+      if (k === 'snowroad') { x.fillStyle = 'rgba(240,247,255,.5)'; x.fillRect(0, 0, S, S); }
+      if (GEM_ROAD[k]) { x.fillStyle = k === 'snowroad' || k === 'cloudRoad' ? 'rgba(110,160,215,.45)' : k === 'dreamRoad' ? 'rgba(255,220,255,.55)' : 'rgba(255,245,220,.5)'; [.333, .667].forEach(u => x.fillRect(S * u - S * .012, S * .3, S * .024, S * .4)); }
+      src = c; TEX[k].userData.rep = 3; TEX[k].repeat.set(1, 3);
     }
     TEX[k].image = src; TEX[k].anisotropy = maxA; TEX[k].needsUpdate = true;
   }));
@@ -1528,6 +1528,44 @@ Object.assign(D, {
   banyan: natOr('tree', 1.5, OLD_D.banyan), kapok: natOr('tree', 1.7, OLD_D.kapok), deadTree: natOr('dead', 1, OLD_D.deadTree),
   ntree: natOr('tree', 1, OLD_D.bigtree), ntwisted: natOr('twisted', 1, OLD_D.bigtree), ngrass: natOr('grass', 1, OLD_D.flowers), nplant: natOr('plant', 1, OLD_D.fern)
 });
+/* =====================================================================
+   v12: özel bölgeler (tünelin yerine bazen): Bulutların Üstü, Rüya Âlemi, Şeker Diyarı
+   ===================================================================== */
+const ZONES = {
+  bulut: { name: 'Bulutların Üstü ☁️', top: 0x4fb0ff, hor: 0xeaf6ff, near: 70, far: 240, light: 1.15, road: 'cloudRoad', side: 'cloudSide', curb: 0xffffff, portal: 0x9fdcff, decor: [['cloudPuff', 60], ['balloon', 16], ['rainbowArc', 5], ['floatStar', 8]] },
+  ruya: { name: 'Rüya Âlemi ✨', top: 0x1d0b4a, hor: 0xd98ae8, near: 35, far: 170, light: .8, road: 'dreamRoad', side: 'dreamSide', curb: 0xb38cff, portal: 0xff7ad9, decor: [['dreamMush', 30], ['floatStar', 26], ['crystal', 18], ['bubbleOrb', 18]] },
+  seker: { name: 'Şeker Diyarı 🍭', top: 0x6fd0ff, hor: 0xffd6ec, near: 55, far: 200, light: 1.1, road: 'candyRoad', side: 'candySide', curb: 0xff6fa8, portal: 0xffd23f, decor: [['lollipop', 32], ['candyCane', 28], ['gumdrop', 26], ['cupcake', 12]] }
+};
+FAR_ONLY.rainbowArc = 1;
+Object.assign(D, {
+  cloudPuff() { const g = new THREE.Group(), m = smooth(pick([0xffffff, 0xfdf4ff, 0xf0f7ff])); for (let i = 0; i < rndi(4, 7); i++) g.add(sph(rnd(.9, 2.2), m, rnd(-2, 2), rnd(-.6, 1), rnd(-1.5, 1.5), 1, .7, 1, 10)); g.position.y = rnd(-1.2, .3); g.userData.bob = true; return g; },
+  balloon() { const g = new THREE.Group(), c = pick([0xff5c8a, 0xffd23f, 0x5fb8ff, 0x7be08a, 0xc58cff]); g.add(sph(.6, smooth(c, { emissive: c, emissiveIntensity: .15 }), 0, rnd(3, 6), 0, 1, 1.2, 1, 14)); const st = g.children[0].position.y; g.add(mesh(geo('bstr', () => new THREE.CylinderGeometry(.015, .015, 2.4, 4)), basic(0xffffff), 0, st - 1.9, 0)); g.userData.bob = true; return g; },
+  rainbowArc() { const g = new THREE.Group(); [0xff5252, 0xffa94d, 0xffe066, 0x69db7c, 0x4dabf7, 0x9775fa].forEach((c, i) => { const t = mesh(geo('rbw' + i, () => new THREE.TorusGeometry(9 - i * .45, .24, 6, 40, Math.PI)), basic(c, { transparent: true, opacity: .85 })); g.add(t); }); g.rotation.y = Math.PI / 2; return g; },
+  floatStar() { const c = pick([0xffe066, 0xffffff, 0xff9ad8]); const o = mesh(geo('fstar', () => new THREE.OctahedronGeometry(.4, 0)), basic(c)); o.position.y = rnd(2, 5); const g = new THREE.Group(); g.add(o); g.add(sph(.8, basic(c, { transparent: true, opacity: .25, depthWrite: false }), 0, o.position.y, 0, 1, 1, 1, 8)); g.userData.bob = true; return g; },
+  dreamMush() { const g = new THREE.Group(), c = pick([0xff7ad9, 0x7ae8ff, 0xb38cff, 0xffd166]); const h = rnd(1.5, 3.5); g.add(mesh(geo('dmst', () => new THREE.CylinderGeometry(.25, .35, 1, 8)), smooth(0xfff4ff), 0, h / 2, 0)); g.children[0].scale.y = h; g.add(mesh(geo('dmcap', () => new THREE.SphereGeometry(1, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2)), smooth(c, { emissive: c, emissiveIntensity: .45 }), 0, h, 0)); g.children[1].scale.set(rnd(1.2, 2), rnd(.8, 1.2), rnd(1.2, 2)); return g; },
+  bubbleOrb() { const g = new THREE.Group(); g.add(sph(rnd(.5, 1.1), basic(pick([0xffd6ff, 0xd6f4ff, 0xfff0b3]), { transparent: true, opacity: .35, depthWrite: false }), 0, rnd(1, 4), 0, 1, 1, 1, 12)); g.userData.bob = true; return g; },
+  lollipop() { const g = new THREE.Group(), c = pick([0xff4f8b, 0x4fc3ff, 0xffd23f, 0x8be04f, 0xc58cff]); const h = rnd(1.8, 3.2); g.add(mesh(geo('lpst', () => new THREE.CylinderGeometry(.07, .07, 1, 6)), smooth(0xffffff), 0, h / 2, 0)); g.children[0].scale.y = h; const d = mesh(geo('lpd', () => new THREE.CylinderGeometry(.9, .9, .22, 24)), smooth(c), 0, h + .7, 0); d.rotation.x = Math.PI / 2; g.add(d); const r = mesh(geo('lpr', () => new THREE.TorusGeometry(.55, .1, 6, 20)), smooth(0xffffff), 0, h + .7, .12); g.add(r); return g; },
+  candyCane() { const g = new THREE.Group(); for (let i = 0; i < 6; i++) g.add(mesh(geo('ccs', () => new THREE.CylinderGeometry(.16, .16, .45, 10)), smooth(i % 2 ? 0xffffff : 0xe8384f), 0, .22 + i * .45, 0)); const t = mesh(geo('cct', () => new THREE.TorusGeometry(.45, .16, 8, 16, Math.PI)), smooth(0xe8384f), .45, 2.7, 0); g.add(t); g.scale.setScalar(rnd(.9, 1.5)); return g; },
+  gumdrop() { const c = pick([0xff4f8b, 0x4fc3ff, 0xffd23f, 0x8be04f, 0xc58cff, 0xff9f43]); const o = mesh(geo('gd', () => new THREE.SphereGeometry(.7, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2)), smooth(c, { emissive: c, emissiveIntensity: .12 })); o.scale.set(1, rnd(1.1, 1.6), 1); o.scale.multiplyScalar(rnd(.7, 1.4)); return o; },
+  cupcake() { const g = new THREE.Group(); g.add(mesh(geo('cup', () => new THREE.CylinderGeometry(.8, .6, .8, 14)), smooth(0xc98a4b), 0, .4, 0)); g.add(sph(.85, smooth(pick([0xffb3d1, 0xfff1c9, 0xc9f0ff])), 0, .95, 0, 1, .7, 1, 14)); g.add(sph(.2, smooth(0xe8384f), 0, 1.6, 0)); g.scale.setScalar(rnd(.8, 1.4)); return g; }
+});
+function buildPortal(col = 0xff7ad9) {
+  const g = new THREE.Group(); const r = mesh(geo('portal', () => new THREE.TorusGeometry(4.6, .35, 10, 40)), basic(col)); r.position.y = 1.6; g.add(r);
+  g.add(mesh(geo('portal2', () => new THREE.TorusGeometry(4.6, .9, 8, 40)), basic(col, { transparent: true, opacity: .25, depthWrite: false }), 0, 1.6, 0));
+  for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2; g.add(mesh(geo('pspark', () => new THREE.OctahedronGeometry(.18, 0)), basic(0xffffff), Math.cos(a) * 4.6, 1.6 + Math.sin(a) * 4.6, 0)); }
+  g.userData.ring = r; return g;
+}
+function setZone(k) {
+  G.zone = k; const Z = k ? ZONES[k] : null;
+  flash(Z ? '#' + Z.portal.toString(16).padStart(6, '0') : '#ffffff', .85, 700); Audio.whoosh(); Audio.pickup();
+  setSideTex(Z ? Z.side : G.cave ? 'cave' : G.underwater ? 'seabedSide' : biome().side);
+  if (landmarks) landmarks.visible = !Z && !G.cave; if (skyExtras) skyExtras.visible = !Z && !G.cave;
+  applySkyVisuals();
+  if (Z) { banner(Z.name, 'gold', 2000); fxStars(new V3(G.px, 1.8, -3), 12, 6); } else banner('Geri döndün!', '', 1200);
+}
+const BIOME_ANIMAL = { karadeniz: 'tavsan', kapadokya: 'at', malezya: 'kedi', amazon: 'kurbaga', kenya: 'geyik', arap: 'alpaka', hindistan: 'boga', bangladesh: 'kurbaga', kutup: 'kurt', bahce: 'inek', misir: 'tilki', volkan: 'boga' };
+const BIOME_LV = { karadeniz: 1, bahce: 1, kapadokya: 2, misir: 3, kenya: 4, malezya: 5, amazon: 6, arap: 7, hindistan: 8, bangladesh: 9, kutup: 10, volkan: 12 };
+const openBiomes = () => BIOMES.map((b, i) => i).filter(i => (BIOME_LV[BIOMES[i].key] || 1) <= curLevel());
 const BIOMES = [
   { key: 'karadeniz', name: 'Karadeniz Yaylaları', flag: '🇹🇷', top: 0x5aa8f0, hor: 0xcfeaff, ground: 0x4a7a3a, road: 'dirt', side: 'grassTr', curb: 0x6b5a3a, decor: [['ngrass', 16], ['ntree', 6], ['spruce', 34], ['pine', 18], ['yayla', 5], ['bush', 12], ['mushroom', 8], ['tea', 7], ['flowers', 8], ['cowModel', 4]], wall: 'tree', arch: 'branch', log: 'log', weathers: ['sunny', 'sis', 'rain', 'storm', 'rainbow'], chaser: 'kurt', charger: 'boga', herd: 'inek', music: 'karadeniz', amb: 'forest', fireflies: true },
   { key: 'kapadokya', name: 'Kapadokya Peri Bacaları', flag: '🇹🇷', top: 0x4f9ef5, hor: 0xffe6c8, ground: 0x9a7a5a, road: 'cobble', side: 'tan', curb: 0x8a6a4a, decor: [['ntwisted', 8], ['fairy', 32], ['rockRed', 12], ['grassDry', 30], ['bush', 8], ['horseModel', 4]], wall: 'fairy', arch: 'beam', log: 'stone', weathers: ['sunny', 'rainbow', 'snow', 'sunny'], chaser: 'at', charger: 'boga', herd: 'at', music: 'kapadokya', amb: 'wind' },
@@ -1582,13 +1620,13 @@ const G = { state: 'boot', t: 0, biomeIdx: 0, weather: 'sunny', tod: 'gunduz' };
 function resetRun() {
   Object.assign(G, {
     lane: 1, px: 0, py: 0, vy: 0, grounded: true, slideT: 0,
-    hearts: 3, shields: (owns('armor', P.armor) ? itemById('armor', P.armor).shield : 0) + (P.animal === 'inek' ? 1 : 0), invuln: 0, pw: { magnet: 0, superjump: 0 }, powerT: rnd(60, 90), landing: false,
+    hearts: 3, shields: (owns('armor', P.armor) ? itemById('armor', P.armor).shield : 0) + (RA() === 'inek' ? 1 : 0), invuln: 0, pw: { magnet: 0, superjump: 0 }, powerT: rnd(60, 90), landing: false,
     food: 0, gems: 0, combo: 0, comboT: 0, xpRun: 0, correct: 0, wrong: 0, bonus: 0, dist: 0, distXp: 0,
     streak: 0, wrongStreak: 0, stage: P.stage || 0,
     speed: 0, runTime: 0, riding: null, rideT: 0, chase: null, junction: null, question: null,
     roadEnd: 14, blocked: false, segCount: 0, sinceJunction: 0, nextJunction: 210, junctionCount: 0, pendingBiome: false, noContent: false,
     pickupT: 24, chaseT: rnd(30, 38), heartT: 40, lightningT: 3, herdT: rnd(8, 14), chargerT: rnd(20, 28), turnAnim: null,
-    underwater: false, space: false, boatWater: false, cave: false, swimming: false, swamOnce: false, kiteCD: rnd(16, 24), swimCD: rnd(12, 20), kite: null, kiteFall: false, ts: 1, tsTarget: 1, ambushT: rnd(14, 20), rockT: rnd(10, 15), mineCD: rnd(28, 40), bolum: 1, abil: 0, abilT: 0, abilKind: null, abilPhase: 0, dbl: false, bendT: 3, bendTarget: new THREE.Vector2(0, 0), tunnelLeft: 0, tunnelFirst: false, tunnelSeg: false, inTunnel: false, resLane: -1, resSegs: 0, fpsStart: 0, fpsN: 0, fpsChecked: false, landing: false, rigY: 0, noTunnel: 0, camEvent: null, shake: 0, flashT: 0, unlockedRun: [], t: 0
+    underwater: false, space: false, boatWater: false, cave: false, swimming: false, swamOnce: false, kiteCD: rnd(16, 24), swimCD: rnd(12, 20), kite: null, kiteFall: false, ts: 1, tsTarget: 1, ambushT: rnd(14, 20), rockT: rnd(10, 15), mineCD: rnd(28, 40), bolum: 1, abil: 0, abilT: 0, abilKind: null, abilPhase: 0, dbl: false, bendT: 3, bendTarget: new THREE.Vector2(0, 0), tunnelLeft: 0, tunnelFirst: false, tunnelSeg: false, inTunnel: false, resLane: -1, resSegs: 0, fpsStart: 0, fpsN: 0, fpsChecked: false, biomeSwapT: 0, decorQ: [], stunT: 0, zone: null, zoneLeft: 0, zoneKind: null, zoneFirst: false, landing: false, rigY: 0, noTunnel: 0, camEvent: null, shake: 0, flashT: 0, unlockedRun: [], t: 0
   });
 }
 const ADULT = () => G.mode === 'yetiskin';
@@ -1609,14 +1647,14 @@ function addCurbs(seg, axis) {
 }
 function refreshRoads() {
   const m = roadMat(curRoadKey()), cm = mat(G.underwater ? 0xc9ab72 : biome().curb);
-  world.children.forEach(o => { if (o.userData.type === 'seg') { o.material = m; o.children.forEach(c => { if (c.userData.curb) { c.material = cm; c.visible = !G.boatWater; } }); } });
-  setSideTex(G.cave ? 'cave' : G.underwater ? 'seabedSide' : biome().side);
-  if (landmarks) landmarks.visible = !G.cave; if (skyExtras) skyExtras.visible = !G.cave;
+  world.children.forEach(o => { if (o.userData.type === 'seg' && !o.userData.zone) { o.material = m; o.children.forEach(c => { if (c.userData.curb) { c.material = cm; c.visible = !G.boatWater; } }); } });
+  setSideTex(G.zone ? ZONES[G.zone].side : G.cave ? 'cave' : G.underwater ? 'seabedSide' : biome().side);
+  if (landmarks) landmarks.visible = !G.cave && !G.zone; if (skyExtras) skyExtras.visible = !G.cave && !G.zone;
 }
-function spawnDecorAt(x, z, nearOnly) {
-  const b = biome(); let type = G.cave ? weighted(CAVE_DECOR) : G.underwater ? weighted(UNDER_DECOR) : weighted(b.decor);
+function spawnDecorAt(x, z, nearOnly, list) {
+  const b = biome(); let type = list ? weighted(list) : G.cave ? weighted(CAVE_DECOR) : G.underwater ? weighted(UNDER_DECOR) : weighted(b.decor);
   if (nearOnly && FAR_ONLY[type]) type = 'bush';
-  if (!G.underwater && !G.cave && b.side.match(/murky|nile|water/) && Math.abs(x) > 6 && !WATERSIDE[type] && type !== 'mangrove' && type !== 'papyrus' && type !== 'reeds' && Math.random() < .5) type = pick(['lily', 'duck', 'lily']);
+  if (!list && !G.underwater && !G.cave && b.side.match(/murky|nile|water/) && Math.abs(x) > 6 && !WATERSIDE[type] && type !== 'mangrove' && type !== 'papyrus' && type !== 'reeds' && Math.random() < .5) type = pick(['lily', 'duck', 'lily']);
   const o = (D[type] || D.bush)();
   if (FAR_ONLY[type] && !nearOnly) x = Math.sign(x || 1) * rnd(13, 30);
   if (type === 'dune') x = Math.sign(x || 1) * rnd(16, 34);
@@ -1632,11 +1670,24 @@ function decorAlong(zc) { if (G.cave) { const f = buildMineFrame(); f.position.s
 function grassColor() { const k = biome().key; return k === 'kutup' ? 0xf4f9ff : (k === 'arap' || k === 'misir' || k === 'kenya' || k === 'kapadokya') ? 0xc9b06a : k === 'malezya' || k === 'amazon' ? 0x2f8f3f : 0x5aaf4a; }
 function spawnStraight() {
   const zc = G.roadEnd - SEG_LEN / 2;
-  const s = new THREE.Mesh(GEO_SEG, roadMat(curRoadKey())); s.position.set(0, 0, zc); s.receiveShadow = true; s.userData = { type: 'seg' };
-  addCurbs(s, 'z'); if (!G.underwater && !/water|murky|nile/.test(biome().side)) s.add(buildGrassStrip(grassColor(), biome().fireflies ? pick([0xff6f91, 0xffd23f, 0xffffff]) : 0)); world.add(s);
   G.tunnelSeg = false; if (G.noTunnel > 0) G.noTunnel--;
-  if (!G.noContent && G.tunnelLeft <= 0 && G.segCount > 5 && !G.riding && !G.chase && !G.abilKind && !(G.noTunnel > 0) && Math.random() < .09 && G.nextJunction - G.sinceJunction > 90) { G.tunnelLeft = rndi(2, 3); G.tunnelFirst = true; }
-  if (G.tunnelLeft > 0 && !G.underwater) { const tn = buildTunnel(G.tunnelFirst, biome().key === 'kutup' ? 0x9ab8d0 : biome().key === 'arap' || biome().key === 'misir' || biome().key === 'kenya' ? 0x9a7048 : 0x6a6056); tn.position.set(0, 0, zc); tn.userData = { type: 'tunnel' }; world.add(tn); G.tunnelLeft--; G.tunnelFirst = false; G.tunnelSeg = true; }
+  if (!G.noContent && G.tunnelLeft <= 0 && G.zoneLeft <= 0 && G.segCount > 5 && !G.riding && !G.chase && !G.abilKind && !(G.noTunnel > 0) && !G.underwater && !G.cave && Math.random() < .1 && G.nextJunction - G.sinceJunction > 140) {
+    const k = weighted([['tunnel', 22], ['bulut', 26], ['ruya', 26], ['seker', 26]]);
+    if (k === 'tunnel') { G.tunnelLeft = rndi(2, 3); G.tunnelFirst = true; } else { G.zoneLeft = rndi(4, 5); G.zoneKind = k; G.zoneFirst = true; }
+  }
+  const Z = G.zoneLeft > 0 ? ZONES[G.zoneKind] : null;
+  const s = new THREE.Mesh(GEO_SEG, roadMat(Z ? Z.road : curRoadKey())); s.position.set(0, 0, zc); s.receiveShadow = true; s.userData = { type: 'seg' };
+  addCurbs(s, 'z');
+  if (Z) { s.userData.zone = G.zoneKind; s.children.forEach(c => { if (c.userData.curb) c.material = mat(Z.curb); }); }
+  else if (!G.underwater && !/water|murky|nile/.test(biome().side)) s.add(buildGrassStrip(grassColor(), biome().fireflies ? pick([0xff6f91, 0xffd23f, 0xffffff]) : 0));
+  world.add(s);
+  if (Z) {
+    G.tunnelSeg = true;
+    if (G.zoneFirst) { const pt = buildPortal(Z.portal); pt.position.set(0, 0, zc + SEG_LEN / 2); pt.userData = Object.assign(pt.userData, { type: 'portal', zone: G.zoneKind }); world.add(pt); G.zoneFirst = false; }
+    for (let k = 0; k < 6; k++) { const z = zc + 10 - k * 3.4 + rnd(-1, 1); spawnDecorAt(-rnd(5, 18), z, false, Z.decor); spawnDecorAt(rnd(5, 18), z + rnd(-1.5, 1.5), false, Z.decor); }
+    G.zoneLeft--;
+    if (G.zoneLeft <= 0) { const pt = buildPortal(0xffffff); pt.position.set(0, 0, zc - SEG_LEN / 2); pt.userData = Object.assign(pt.userData, { type: 'portal', zone: null }); world.add(pt); G.noTunnel = 6; }
+  } else if (G.tunnelLeft > 0 && !G.underwater) { const tn = buildTunnel(G.tunnelFirst, biome().key === 'kutup' ? 0x9ab8d0 : biome().key === 'arap' || biome().key === 'misir' || biome().key === 'kenya' ? 0x9a7048 : 0x6a6056); tn.position.set(0, 0, zc); tn.userData = { type: 'tunnel' }; world.add(tn); G.tunnelLeft--; G.tunnelFirst = false; G.tunnelSeg = true; if (G.tunnelLeft <= 0) G.noTunnel = 4; }
   else decorAlong(zc);
   if (!G.noContent && G.segCount >= 2) populateSeg(zc);
   G.roadEnd -= SEG_LEN; G.segCount++; G.sinceJunction += SEG_LEN;
@@ -1701,7 +1752,7 @@ function spawnJunction() {
 function roadTick() {
   let guard = 0;
   while (G.roadEnd > -175 && !G.blocked && guard++ < 20) {
-    if (!G.noContent && G.sinceJunction >= G.nextJunction && !G.riding && !G.chase && G.segCount > 3) spawnJunction();
+    if (!G.noContent && G.sinceJunction >= G.nextJunction && !G.riding && !G.chase && G.segCount > 3 && G.zoneLeft <= 0 && !G.zone) spawnJunction();
     else spawnStraight();
   }
 }
@@ -1730,7 +1781,7 @@ function addObstacle(kind, lane, z) {
   g.position.set(LANE_X[lane] + x0, 0, z); shadowAll(g); world.add(g); return g;
 }
 function addFood(lane, z, y) {
-  const f = foodProto(itemById('animal', P.animal).food).clone(); f.position.set(LANE_X[lane], y, z); f.userData = { type: 'food', base: y }; world.add(f); return f;
+  const f = foodProto(itemById('animal', RA()).food).clone(); f.position.set(LANE_X[lane], y, z); f.userData = { type: 'food', base: y }; world.add(f); return f;
 }
 function addFoodLine(lane, z, n = 5, y = .9) { for (let i = 0; i < n; i++) addFood(lane, z - i * 1.7, y); }
 function addFoodArc(lane, z) { const n = 6; for (let i = 0; i < n; i++) addFood(lane, z - i * 1.4, .9 + Math.sin(i / (n - 1) * Math.PI) * 1.9); }
@@ -1772,7 +1823,7 @@ function populateSeg(zc) {
     else { const at = abType(G.abilKind), y = at === 'kite' ? 7.6 : at === 'hop' ? 3.4 : at === 'frog' ? 4.2 : at === 'leap' ? 4.4 : 4.8; if (G.abilKind === 'kite' && Math.random() < .5) addRing(rndi(0, 2), zc, 7.4); for (let l = 0; l < 3; l++) if (Math.random() < .6) addFoodLine(l, zc + 6, 5, y + rnd(-.3, .5)); if (G.abilKind === 'kedi') for (let k = 0; k < 3; k++) addTreetop(rndi(0, 2), zc + 8 - k * 7); }
     return;
   }
-  if (!G.tunnelSeg && G.mineCD <= 0 && G.runTime > 20 && Math.random() < .35 && G.nextJunction - G.sinceJunction > 130) { addMine(zc); G.mineCD = rnd(60, 85); G.noTunnel = 4; return; }
+  if (!G.tunnelSeg && !G.zone && G.zoneLeft <= 0 && G.mineCD <= 0 && G.runTime > 20 && Math.random() < .35 && G.nextJunction - G.sinceJunction > 130) { addMine(zc); G.mineCD = rnd(60, 85); G.noTunnel = 4; return; }
   G.resSegs = Math.max(0, G.resSegs - 1);
   const bk = biome().key, far = G.nextJunction - G.sinceJunction;
   if (!G.tunnelSeg && G.resSegs === 0 && G.runTime > 15 && G.kiteCD <= 0 && far > 100 && Math.random() < .3) { const l = rndi(0, 2); addSpring(l, zc); addFoodLine(l, zc + 9, 3); G.kiteCD = rnd(40, 55); G.noTunnel = 4; return; }
@@ -1866,6 +1917,7 @@ function envTarget() {
   top.lerp(new THREE.Color(w.to), w.mix * .75 * (G.tod === 'gece' ? .3 : 1)); hor.lerp(new THREE.Color(w.to), w.mix * (G.tod === 'gece' ? .35 : 1));
   const t = { top, hor, near: 45 * w.near, far: 180 * w.far, light: td.light * w.dim };
   if (G.inTunnel) { t.light *= .4; }
+  if (G.zone && ZONES[G.zone]) { const Z = ZONES[G.zone]; Object.assign(t, { top: new THREE.Color(Z.top), hor: new THREE.Color(Z.hor), near: Z.near, far: Z.far, light: Z.light }); }
   if (G.cave) Object.assign(t, { top: new THREE.Color(0x1a100a), hor: new THREE.Color(0x3d2818), near: 14, far: 95, light: .9 });
   if (G.underwater) Object.assign(t, { top: new THREE.Color(0x0b3d6a), hor: new THREE.Color(0x1d74a8), near: 4, far: 60, light: .95 });
   if (G.space) Object.assign(t, { top: new THREE.Color(0x01020f), hor: new THREE.Color(0x0a1040), near: 90, far: 420, light: .95 });
@@ -1882,7 +1934,7 @@ function applyEnv(dt, instant) {
   sky.position.copy(camera.position);
 }
 function applySkyVisuals() {
-  const td = TOD[G.tod], w = G.weather, out = !G.underwater && !G.space && !G.cave, clear = w === 'sunny' || w === 'rainbow';
+  const td = TOD[G.tod], w = G.weather, out = !G.underwater && !G.space && !G.cave && !G.zone, clear = w === 'sunny' || w === 'rainbow';
   const sp = td.sunPos || [0, -100, 0], mp = td.moonPos || [0, -100, 0];
   sunDisc.position.set(...sp); sunHalo.position.set(sp[0], sp[1], sp[2] - 2); sunDisc.visible = sunHalo.visible = out && !!td.sunPos && clear;
   sunDisc.material = basic(G.tod === 'gunduz' ? 0xfff1a8 : 0xffb070, { fog: false }); sun.color.set(td.sunCol || 0x9fb4ff);
@@ -1892,7 +1944,7 @@ function applySkyVisuals() {
   aurora.visible = out && G.tod === 'gece' && !!biome().aurora;
   rain.visible = out && (w === 'rain' || w === 'storm'); rain.material.opacity = w === 'storm' ? .7 : .5;
   snow.visible = out && w === 'snow'; sand.visible = out && w === 'sandstorm';
-  bubbles.visible = G.underwater; fireflies.visible = out && G.tod === 'gece' && !!biome().fireflies && w !== 'storm';
+  bubbles.visible = G.underwater; fireflies.visible = (out && G.tod === 'gece' && !!biome().fireflies && w !== 'storm') || G.zone === 'ruya'; if (G.zone === 'ruya') stars.visible = true;
   const cc = w === 'storm' ? 0x5b6370 : (w === 'rain' || w === 'sis') ? 0xb8c2cc : G.tod === 'gece' ? 0x3a4466 : G.tod === 'gunbatimi' ? 0xffc0a0 : 0xffffff;
   clouds.forEach(c => { c.visible = !G.space && !G.cave; c.children.forEach(m => m.material = smooth(cc, { transparent: true, opacity: .95 })); });
   if (rain.visible) resetParticles(rain, i => [0, -100, 0]);
@@ -1913,7 +1965,8 @@ function setBiome(idx, opts = {}) {
 }
 function regenDecor() {
   for (let i = world.children.length - 1; i >= 0; i--) { const o = world.children[i]; if (o.userData.type === 'decor' || o.userData.type === 'deco2') world.remove(o); }
-  world.children.slice().forEach(o => { if (o.userData.type === 'seg' && Math.abs(o.position.x) < 1 && o.position.z < 30 && !o.userData.junction) decorAlong(o.position.z); });
+  const segs = world.children.filter(o => o.userData.type === 'seg' && Math.abs(o.position.x) < 1 && o.position.z < 30 && !o.userData.junction && !o.userData.zone).sort((a, b) => b.position.z - a.position.z);
+  if (G.state === 'play') { G.decorQ = segs.slice(2); segs.slice(0, 2).forEach(o => decorAlong(o.position.z)); } else segs.forEach(o => decorAlong(o.position.z));
 }
 function setWeather(w, silent) { G.weather = w; applySkyVisuals(); Audio.setAmbient(); if (!silent) banner(WEATHER[w].name, w === 'storm' || w === 'sandstorm' ? 'red' : ''); }
 function randomTod() { return weighted([['gunduz', 45], ['gunbatimi', 20], ['gece', 18], ['safak', 17]]); }
@@ -1958,7 +2011,7 @@ function addXp(n) {
     for (let L = before + 1; L <= after; L++) {
       const u = unlocksAt(L); G.unlockedRun.push(...u);
       const names = u.map(x => x.item.icon + ' ' + x.item.name).join(', ');
-      setTimeout(() => { if (G.state !== 'play') return; banner(`SEVİYE ${L}!<small>${names ? 'Yeni: ' + names : ''}</small>`, 'gold', 2600); Audio.levelUp(); burst(playerRoot.position.clone().add(new V3(0, 2, 0)), 60, [0xffd23f, 0xff6f91, 0x5be38c, 0x5fb8ff, 0xffffff], 7, 1.4); if (!G.turnAnim && !(G.camEvent && G.camEvent.type === 'turn')) G.camEvent = { type: 'pano', t: 0, dur: 1.2 }; }, 600);
+      setTimeout(() => { if (G.state !== 'play') return; banner(`SEVİYE ${L}!<small>${names ? 'Yeni: ' + names : ''}</small>`, 'gold', 2600); Audio.levelUp(); fxPop(playerRoot.position.clone().add(new V3(0, 2, 0)), true); if (!G.turnAnim && !(G.camEvent && G.camEvent.type === 'turn')) G.camEvent = { type: 'pano', t: 0, dur: 1.2 }; }, 600);
     }
     Store.save();
   }
@@ -1968,6 +2021,7 @@ function collectFood(o) {
   G.food++; P.collected++; G.combo = G.comboT > 0 ? G.combo + 1 : 0; G.comboT = .6; G.bonus += 10;
   Audio.collect(G.combo); burst(wpos(o), 4, [0xffd93d, 0xfff3b0, 0xff9a3d], 2.5, .35, -6, .7);
   world.remove(o); addXp(1); addAbil(1); P.coins = (P.coins || 0) + 1;
+  if (G.food % 15 === 0) { fxPop(playerRoot.position.clone().add(new V3(0, 1.6, -1)), false); banner(`${G.food} ${foodOf().icon}!`, 'gold', 700); }
 }
 function setLane(n) {
   n = clamp(n, 0, 2); if (n === G.lane) return; G.lane = n; Audio.lane();
@@ -1983,8 +2037,8 @@ function steer(d) {
 }
 function jump() {
   if (G.state !== 'play' || G.riding || G.landing || (G.abilKind && !isDash())) return;
-  if (!G.grounded) { if (P.animal === 'kurbaga' && !G.dbl) { G.dbl = true; G.vy = 9; Audio.jump(); burst(playerRoot.position.clone(), 6, [0xffffff, 0xffd23f], 2, .4, -4, .7); } return; }
-  G.slideT = 0; G.vy = (P.animal === 'tavsan' ? 12.5 : P.animal === 'geyik' ? 12 : 10) * (G.pw.superjump > 0 ? 1.2 : 1); G.grounded = false; Audio.jump();
+  if (!G.grounded) { if (RA() === 'kurbaga' && !G.dbl) { G.dbl = true; G.vy = 9; Audio.jump(); burst(playerRoot.position.clone(), 6, [0xffffff, 0xffd23f], 2, .4, -4, .7); } return; }
+  G.slideT = 0; G.vy = (RA() === 'tavsan' ? 12.5 : RA() === 'geyik' ? 12 : 10) * (G.pw.superjump > 0 ? 1.2 : 1); G.grounded = false; Audio.jump();
 }
 function slide() {
   if (G.state !== 'play' || G.riding || G.abilKind) return;
@@ -1999,7 +2053,18 @@ function hurt(o, beast) {
   burst(playerRoot.position.clone().add(new V3(0, 1, 0)), 12, [0x8d6a3d, 0xffffff, 0xff8a80], 4, .6);
   if (G.hearts <= 0) gameOver();
 }
-function smash(o) { o.userData.hit = true; Audio.smash(); burst(wpos(o).add(new V3(0, .6, 0)), 20, [0x8d6a3d, 0x9e9e9e, 0xd7b48a, 0xffd23f], 6, .8); world.remove(o); }
+function wolfCatch(o) {
+  const hadShield = G.shields > 0;
+  if (o.userData.isModel) { playAct(o, ['Attack', 'Gallop_Jump'], .05, true, 1.4); o.userData.mixer.timeScale = 1; setTimeout(() => { if (o.parent) playAct(o, ['Gallop', 'Run'], .15); }, 600); }
+  o.userData.vx = -Math.sign(o.userData.vx || 1) * -11; o.position.y = .2;
+  G.stunT = 1.1; G.tsTarget = .45; setTimeout(() => { G.tsTarget = 1; }, 550);
+  G.camEvent = { type: 'punch', t: 0, dur: .5 }; G.shake = .5; Device.vibrate(120);
+  const p = playerRoot.position.clone().add(new V3(0, 1.2, .3)); burst(p, 22, [0xffffff, 0xdcdcdc, 0xffd23f], 5, .7); fxRing(p, 0xffe0e0, 5);
+  Audio.tone(220, .15, 'square', .12); Audio.noise('lowpass', 800, .25, .3, 0, .6);
+  banner(hadShield ? 'Kalkan seni korudu! 🛡️' : 'Hap! Kurt yakaladı! 🐺', hadShield ? 'gold' : 'red', 1300);
+  G.speed *= .55; hurt(o, true);
+}
+function smash(o) { o.userData.hit = true; Audio.smash(); const p = wpos(o).add(new V3(0, .6, 0)); burst(p, 20, [0x8d6a3d, 0x9e9e9e, 0xd7b48a, 0xffd23f], 6, .8); fxRing(p, 0xffc070, 4); fxStars(p, 4, 4); world.remove(o); }
 
 /* ---- kavşak çözümü ve dönüş ---- */
 function resolveJunction() {
@@ -2033,26 +2098,27 @@ function doTurn(dir, secretHit) {
   G.roadEnd = minZ - SEG_LEN / 2; G.blocked = false; G.junction = null; G.sinceJunction = 0;
   G.lane = 1; G.px = 0; playerRoot.position.x = 0; camPos.x -= px0; camLook.x -= px0; camera.position.x -= px0;
   parts.forEach(p => p.position.x -= px0); leaving.forEach(v => v.position.x -= px0);
-  if (G.pendingBiome) { G.pendingBiome = false; changeBiome(); }
+  if (G.pendingBiome) { G.pendingBiome = false; G.biomeSwapT = .55; }
   chosen.forEach(o => { if (o.position.z < -14) { if (secretHit) { addFoodLine(0, o.position.z + 8, 6); addFoodLine(1, o.position.z + 8, 6); addFoodLine(2, o.position.z + 8, 6); if (Math.random() < .5) addSpecial('gem', rndi(0, 2), o.position.z - 2); } else populateSeg(o.position.z); } });
   if (secretHit) { banner('GİZLİ YOL! 💎', 'gold', 1800); Audio.gem(); }
   G.camEvent = { type: 'turn', t: 0, dur: .6, dir };
 }
 function changeBiome() {
   flash('#ffffff', 1, 800); Audio.whoosh();
-  let n; do { n = rndi(0, BIOMES.length - 1); } while (n === G.biomeIdx);
+  const ob = openBiomes().filter(i => i !== G.biomeIdx); const n = ob.length ? pick(ob) : (G.biomeIdx + 1) % BIOMES.length;
   const b = BIOMES[n];
+  const na = BIOME_ANIMAL[b.key] || G.animal; if (na !== G.animal) { if (G.abilKind && G.abilKind !== 'kite') endAbility(); G.animal = na; const ry = rig ? rig.g.position.y : 0; setAnimal(na); rig.g.position.y = ry; burst(playerRoot.position.clone().add(new V3(0, 1, 0)), 40, [0xffffff, 0xffd23f, 0xff6f91, 0x5fb8ff], 6, 1); }
   setBiome(n, { weather: randomWeather(b), tod: Math.random() < .5 ? randomTod() : G.tod });
   regenDecor();
   G.bolum++; $('bolum').textContent = 'Bölüm ' + G.bolum; P.checkpoint = { bolum: G.bolum, biomeIdx: n, stage: G.stage }; Store.save();
   G.shields = Math.max(G.shields, owns('armor', P.armor) ? itemById('armor', P.armor).refill : 0); hudAll();
-  setTimeout(() => banner(`Bölüm ${G.bolum}<small>${b.flag} ${b.name}</small>`, 'gold', 2600), 200);
+  setTimeout(() => banner(`Bölüm ${G.bolum}<small>${b.flag} ${b.name} • ${itemById('animal', G.animal).icon} ${itemById('animal', G.animal).name}</small>`, 'gold', 2600), 200);
   G.camEvent = { type: 'pano', t: 0, dur: 2.6 };
 }
 function onCorrect() {
   G.correct++; P.totalCorrect = (P.totalCorrect || 0) + 1; G.bonus += 100 + G.streak * 20; Audio.correct();
   banner(pick(['Aferin!', 'Harika!', 'Süper!', 'Bravo!', 'Müthiş!', 'Doğru!']));
-  burst(playerRoot.position.clone().add(new V3(0, 2, -1)), 40, [0xffd23f, 0xff6f91, 0x5be38c, 0x5fb8ff, 0xffffff], 6, 1.1);
+  fxPop(playerRoot.position.clone().add(new V3(0, 2, -1.5)), true);
   addXp(20);
   G.streak++; G.wrongStreak = 0;
   const ns = fixStage(G.stage + 1); if (P.auto && G.streak >= 4 && ns > G.stage) { G.stage = ns; G.streak = 0; setTimeout(() => { if (G.state === 'play') { banner(`Yeni işlem açıldı!<small>${STAGES[G.stage].name}</small>`, 'gold', 2600); Audio.stageUp(); } }, 1900); }
@@ -2068,11 +2134,11 @@ function onWrong(silent) {
 
 /* ---- hayvan yetenekleri ---- */
 const ABIL_NEED = 25, ABIL_DUR = 6.5;
-function addAbil(n) { if (G.abilKind || G.state !== 'play') return; G.abil = Math.min(abilNeed(), G.abil + n * (P.animal === 'at' ? 1.4 : 1)); $('abFill').style.width = (100 * G.abil / abilNeed()) + '%'; $('abil').classList.toggle('full', G.abil >= abilNeed()); }
+function addAbil(n) { if (G.abilKind || G.state !== 'play') return; G.abil = Math.min(abilNeed(), G.abil + n * (RA() === 'at' ? 1.4 : 1)); $('abFill').style.width = (100 * G.abil / abilNeed()) + '%'; $('abil').classList.toggle('full', G.abil >= abilNeed()); }
 function tryAbility() { if (G.abil >= abilNeed() && !G.abilKind && !G.riding && !G.chase && !G.landing && !tunnelNear(-45, 14) && !(G.junction && !G.junction.resolved && G.junction.obj.position.z > -70)) startAbility(); }
 function startAbility() {
-  G.abilKind = P.animal; G.abilT = ABIL_DUR; G.abil = 0; G.abilPhase = 0; G.abilHop = -1; $('abFill').style.width = '0%'; $('abil').classList.remove('full'); G.slideT = 0;
-  banner(itemById('animal', P.animal).ability, 'gold', 1800); Audio.pickup();
+  G.abilKind = RA(); G.abilT = ABIL_DUR; G.abil = 0; G.abilPhase = 0; G.abilHop = -1; $('abFill').style.width = '0%'; $('abil').classList.remove('full'); G.slideT = 0;
+  banner(itemById('animal', RA()).ability, 'gold', 1800); Audio.pickup();
   world.children.slice().forEach(o => { if (o.userData.type === 'obst' && o.position.z > -30 && !isDash()) world.remove(o); });
   if (!isDash()) clearTunnelsAhead(-45);
   if (isDash()) { Audio.roar(true); G.camEvent = { type: 'punch', t: 0, dur: .6 }; }
@@ -2153,7 +2219,7 @@ function startChase() {
   banner(CHASE_TEXT[kind] || `DİKKAT! ${BEAST_NAME[kind] || 'Vahşi hayvanlar'} peşinde!`, 'red', 2200); Audio.alarm();
   if (kind === 'kurt') setTimeout(howl, 300); else if (kind === 'boga' || kind === 'at') setTimeout(() => Audio.roar(true), 400);
   $('danger').classList.add('on'); setTimeout(() => $('danger').classList.remove('on'), 1500);
-  $('cmThem').textContent = CHASE_ICON[kind] || '🐾'; $('cmMe').textContent = itemById('animal', P.animal).icon; $('chaseMeter').classList.remove('hidden');
+  $('cmThem').textContent = CHASE_ICON[kind] || '🐾'; $('cmMe').textContent = itemById('animal', RA()).icon; $('chaseMeter').classList.remove('hidden');
   setTimeout(() => { if (G.chase) hint('Engellerden temiz geç, 💨 topla, uzaklaş!', 2600); }, 2300);
   Audio.startChaseLoop(kind === 'boulder' || kind === 'saman' ? 'boulder' : kind === 'kum' ? 'storm' : 'beast'); Music.play('chase');
 }
@@ -2163,7 +2229,7 @@ function updateChase(dt) {
   const c = G.chase; c.t += dt; const D = difficulty();
   if (c.phase === 'warn' && c.t > 2.4) c.phase = 'run';
   if (c.phase === 'run') {
-    c.gap -= (ADULT() ? 1.05 + D * .5 : .6 + D * .3) * (P.animal === 'kurt' ? .65 : 1) * dt;
+    c.gap -= (ADULT() ? 1.05 + D * .5 : .6 + D * .3) * (RA() === 'kurt' ? .65 : 1) * dt;
     if (c.gap <= 0) {
       c.caught++; c.gap = 7; G.invuln = 0; G.shake = .6; burst(new V3(G.px, 1, .5), 20, [0x8d6a3d, 0xffffff], 5, .6);
       banner(c.caught > 1 ? 'Yine yakaladı! Kaç!' : 'Yakalandın! Kaç!', 'red', 1300); hurt(null, true); if (G.state !== 'play') return;
@@ -2175,7 +2241,7 @@ function updateChase(dt) {
     }
     if (c.ravine && c.ravine.position.z > c.ravine.userData.L / 2 + .6) {
       c.phase = 'stuck'; c.ravine.userData.collapse = true; Audio.smash(); Audio.noise('lowpass', 200, .4, 1.2, 0, .6);
-      G.bonus += 500 + (c.caught ? 0 : 300); addXp(10); banner(c.caught ? 'ATLATTIN! +500 🎉' : 'HİÇ YAKALANMADAN ATLATTIN! +800 🏆', 'gold', 2400); setTimeout(() => Audio.levelUp(), 300);
+      G.bonus += 500 + (c.caught ? 0 : 300); addXp(10); fxPop(playerRoot.position.clone().add(new V3(0, 2, 0)), true); banner(c.caught ? 'ATLATTIN! +500 🎉' : 'HİÇ YAKALANMADAN ATLATTIN! +800 🏆', 'gold', 2400); setTimeout(() => Audio.levelUp(), 300);
       G.camEvent = { type: 'lookback', t: 0, dur: 2.4 }; G.tsTarget = .45; setTimeout(() => { G.tsTarget = 1; }, 1100);
       Audio.stopChaseLoop(); Music.play(biome().music); $('chaseMeter').classList.add('hidden');
       if (chaser.userData.mixers) chaser.children.forEach(b => { if (b.userData.isModel) playAct(b, ['Idle_2', 'Idle'], .3); }); setTimeout(() => { if (c.kind === 'kurt') howl(); else if (chaser && !chaser.userData.roll) Audio.roar(false); }, 500);
@@ -2323,7 +2389,7 @@ function updatePlay(dt) {
     if (G.abilKind && !isDash()) { abilityMotion(dt); if (G.py < fl) G.py = fl; }
     else if (G.landing) { G.py = lerp(G.py, fl, damp(3.4, dt)); G.vy = 0; if (G.py - fl < .12) { G.py = fl; G.landing = false; G.grounded = true; G.dbl = false; Audio.land(); } }
     else {
-      const glide = (P.animal === 'kedi' || G.kiteFall) && G.vy < 0 && !G.grounded;
+      const glide = (RA() === 'kedi' || G.kiteFall) && G.vy < 0 && !G.grounded;
       G.vy -= (glide ? 13 : 27) * dt; if (glide && G.vy < (G.kiteFall ? -4 : -5.5)) G.vy = G.kiteFall ? -4 : -5.5;
       const wasG = G.grounded; G.py += G.vy * dt;
       if (wasG && G.vy <= 0 && G.py > fl && G.py - fl < .5) G.py = fl;
@@ -2358,6 +2424,7 @@ function updatePlay(dt) {
     if (G.swimming && G.py < .3 && Math.random() < .35) burst(new V3(G.px + rnd(-.5, .5), .3, rnd(-.3, .6)), 1, [0xffffff, 0xbfe9ff], 2, .4, -6, .8);
     const ak = G.abilKind, at = ak ? abType(ak) : null;
     pose(at === 'frog' ? 'swing' : at === 'glide' || at === 'kite' ? 'glide' : at === 'hop' || at === 'leap' ? 'jump' : G.slideT > 0 && G.grounded ? 'slide' : G.grounded ? 'run' : 'jump', G.t, G.speed / 14 * (at === 'dash' ? 1.5 : G.swimming ? .65 : 1));
+    if (G.stunT > 0) { G.stunT -= dt; const k = 1 - G.stunT / 1.1; if (k < .5) { rig.g.rotation.x = -Math.sin(k / .5 * Math.PI) * .6; rig.g.rotation.z = Math.sin(k / .5 * Math.PI * 2) * .35; } else { rig.g.rotation.x = 0; rig.g.rotation.z = 0; } dizzy.visible = G.stunT > 0; dizzy.children.forEach((sp, i) => { const a = G.t * 6 + i * Math.PI / 2; sp.position.set(Math.cos(a) * .6, 2.1 + Math.sin(G.t * 9 + i) * .08, Math.sin(a) * .6); }); if (G.stunT <= 0) { rig.g.rotation.x = 0; rig.g.rotation.z = 0; } }
     if (at === 'dash' && Math.random() < .7) burst(new V3(G.px + rnd(-.4, .4), rnd(.3, 1.5), 1.2), 1, [0xff8a1f, 0xffd23f, 0xffffff], 2, .35, 0, .9);
     if (ak) { G.abilT -= dt; if (G.abilT <= 0) endAbility(); }
   }
@@ -2366,6 +2433,8 @@ function updatePlay(dt) {
   for (let i = leaving.length - 1; i >= 0; i--) { const v = leaving[i]; v.position.z -= 30 * dt; v.position.y += 8 * dt; v.rotation.x = -.3; if (v.position.z < -90) { scene.remove(v); leaving.splice(i, 1); } }
 
   // dönüş animasyonu
+  if (G.biomeSwapT > 0) { G.biomeSwapT -= dt; if (G.biomeSwapT <= 0) changeBiome(); }
+  if (G.decorQ && G.decorQ.length) { for (let k = 0; k < 2 && G.decorQ.length; k++) { const sg = G.decorQ.shift(); if (sg.parent === world && sg.position.z < 20) decorAlong(sg.position.z); } }
   if (G.turnAnim) { G.turnAnim.t += dt; const u = Math.min(1, G.turnAnim.t / .45); world.rotation.y = G.turnAnim.from * (1 - (u * u * (3 - 2 * u))); if (u >= 1) { world.rotation.y = 0; G.turnAnim = null; } }
 
   // dünyayı hareket ettir, çarpışmaları denetle
@@ -2395,7 +2464,7 @@ function updatePlay(dt) {
       if (!u.open && o.position.z > -24) { u.open = true; Audio.noise('lowpass', 160, .4, 1, 0, .7); G.shake = Math.max(G.shake, .15); }
       if (u.open && u.fall < 1) { u.fall = Math.min(1, u.fall + dt * 1.6); u.crust.children.forEach((c, i) => { c.position.y = .07 - u.fall * u.fall * 3 - i * .06; c.rotation.x += dt * 3 * (i % 2 ? 1 : -1); }); u.crack.material.opacity = 1 - u.fall; if (u.fall >= 1) u.crust.visible = false; }
     }
-    else if (u.type === 'mine') { if (!u.trig && o.position.z > -1.5 && !G.riding && !G.chase) { u.trig = true; startRide('vagon'); } }
+    else if (u.type === 'mine') { if (!u.trig && o.position.z > -1.5 && !G.riding && !G.chase && !G.zone) { u.trig = true; startRide('vagon'); } }
     else if (u.type === 'herd') animateBeast(o, G.t, 1.3);
     else if (u.type === 'food') { o.rotation.y += dt * 3; if (magnet && o.position.z > -7 && o.position.distanceTo(pc) < 6) o.position.lerp(pc, damp(8, dt)); }
     else if (u.type === 'pw') { o.position.y = 1.3 + Math.sin(G.t * 3) * .2; }
@@ -2404,13 +2473,14 @@ function updatePlay(dt) {
     else if (u.type === 'ring') o.rotation.y = Math.sin(G.t * 2) * .2;
     else if (u.type === 'sparkle') o.children.forEach((s, k) => { s.position.y = .5 + ((G.t * .8 + k * .37) % 3); s.rotation.y += dt * 4; });
     else if (u.type === 'strike') { u.t -= dt; u.ring.scale.setScalar(1 + Math.sin(G.t * 20) * .1); if (u.t <= 0 && !u.done) { u.done = true; boltAt(o); flash('#ffffff', .7, 250); G.flashT = 1; Audio.crack(); burst(wpos(o).add(new V3(0, .5, 0)), 25, [0xfff8b0, 0xffffff, 0xffd23f], 7, .6); if (Math.abs(o.position.x - G.px) < 1.15 && Math.abs(o.position.z) < 2 && !G.riding) hurt(null); u.kill = .3; } if (u.kill !== undefined) { u.kill -= dt; if (u.kill <= 0) { world.remove(o); continue; } } }
+    else if (u.type === 'portal') { if (u.ring) u.ring.rotation.z += dt * 1.5; if (!u.done && o.position.z > 0) { u.done = true; setZone(u.zone); } }
     else if (u.type === 'tunnel') { if (Math.abs(o.position.z) < 10.5 && Math.abs(o.position.x) < 3) inT = true; }
     else if (u.type === 'swim') { if (Math.abs(o.position.z) < u.len / 2) inSwim = true; }
     else if (u.type === 'spring') { u.arrow.position.y = 2.2 + Math.sin(G.t * 5) * .25; u.arrow.rotation.y += dt * 3; if (u.boing > 0) { u.boing -= dt; u.top.position.y = .82 + Math.sin(u.boing * 30) * .18 * u.boing; } }
     else if (u.type === 'boost') { o.rotation.y += dt * 4; o.position.y = 1.1 + Math.sin(G.t * 4) * .2; }
     else if (u.type === 'lavaRiver' || (u.type === 'obst' && u.lava)) { if (u.bub) u.bub.forEach((b, k) => b.position.y = .1 + Math.abs(Math.sin(G.t * 3 + k)) * .12); if (u.type === 'lavaRiver' && !u.warned && o.position.z > -34) { u.warned = true; hint('🌋 Lav nehri! ZIPLA!', 1600); Audio.noise('lowpass', 400, .25, .8, 0, .7); } }
     else if (u.type === 'ravine') { if (u.collapse && u.fall < 1) { u.fall = Math.min(1, u.fall + dt * .9); u.planks.children.forEach((p, k) => { p.position.y = .2 - u.fall * u.fall * (6 + (k % 5)); p.rotation.x = u.fall * (k % 2 ? 2 : -2); }); } }
-    else if (u.type === 'decor') { if (u.bat !== undefined) { o.position.x += Math.sin(G.t * 2 + u.bat) * .05; o.children.slice(1).forEach(w => w.rotation.z = Math.sin(G.t * 20) * .6 * Math.sign(w.position.x)); } if (u.bob) o.position.y = Math.sin(G.t * 2 + u.phase) * .05; else if (u.sway) o.rotation.z = Math.sin(G.t * 1.5 + u.phase) * .15; else if (u.swim) o.position.z -= u.swim * dt; }
+    else if (u.type === 'decor') { if (u.bat !== undefined) { o.position.x += Math.sin(G.t * 2 + u.bat) * .05; o.children.slice(1).forEach(w => w.rotation.z = Math.sin(G.t * 20) * .6 * Math.sign(w.position.x)); } if (u.bob) { if (u.by === undefined) u.by = o.position.y; o.position.y = u.by + Math.sin(G.t * 2 + u.phase) * (u.by !== 0 ? .3 : .05); } else if (u.sway) o.rotation.z = Math.sin(G.t * 1.5 + u.phase) * .15; else if (u.swim) o.position.z -= u.swim * dt; }
     const z = o.position.z, x = o.position.x;
     if ((z > 24 && u.type !== 'ravine') || z > 75 || Math.abs(x) > 95 || z < -420) { if (u.dispose) o.traverse(c => { if (c.material && c.material.map && c.material.isMeshBasicMaterial) c.material.map.dispose(); }); world.remove(o); continue; }
     if (Math.abs(z) < 2.6 && !G.turnAnim) checkHit(o, pc);
@@ -2454,7 +2524,7 @@ function checkHit(o, pc) {
     case 'obst':
       if (G.chase && G.chase.phase === 'run' && !u.passed && !u.hit && z > .9 && dx < 3.5) { u.passed = true; chaseGain(dx < 1.3 ? 1.5 : .8); }
       if (u.hit || Math.abs(z) > .75 || dx > 1.0) return;
-      if (!u.lava && (G.riding === 'kaykay' || isDash() || (P.animal === 'tilki' && u.kind === 'log') || (P.animal === 'boga' && u.kind === 'wall'))) { smash(o); addXp(2); G.bonus += 20; return; }
+      if (!u.lava && (G.riding === 'kaykay' || isDash() || (RA() === 'tilki' && u.kind === 'log') || (RA() === 'boga' && u.kind === 'wall'))) { smash(o); addXp(2); G.bonus += 20; return; }
       if (G.riding || G.abilKind || G.py > 2) return;
       if (u.kind === 'log' && G.py > .5) return;
       if (u.kind === 'arch' && G.slideT > 0) return;
@@ -2470,18 +2540,18 @@ function checkHit(o, pc) {
       if (Math.abs(z) < 1 && dx < 1.1) { world.remove(o); chaseGain(5, 'Rüzgar gibi! 💨'); G.speed += 5; Audio.ring(); burst(new V3(G.px, 1, 0), 20, [0xffffff, 0x9be7ff], 5, .5); }
       return;
     case 'leaper':
-      if (!u.hit && Math.abs(z) < 1.2 && dx < 1.15 && G.py < 1.3 && !G.riding && !(G.abilKind && !isDash())) { u.hit = true; if (isDash()) { smash(o); G.bonus += 50; return; } banner('Kurt yakaladı! 🐺', 'red', 1200); G.speed *= .55; hurt(o, true); }
-      else if (!u.near && !u.hit && Math.abs(z) < 1.2 && dx < 2.8) { u.near = true; setTimeout(() => { if (!u.hit && G.state === 'play') { banner('Kıl payı! +150', 'gold', 1000); G.bonus += 150; Audio.ring(); } }, 200); }
+      if (!u.hit && Math.abs(z) < 1.2 && dx < 1.15 && G.py < 1.3 && !G.riding && !(G.abilKind && !isDash())) { u.hit = true; if (isDash()) { smash(o); G.bonus += 50; return; } wolfCatch(o); }
+      else if (!u.near && !u.hit && Math.abs(z) < 1.2 && dx < 2.8) { u.near = true; setTimeout(() => { if (!u.hit && G.state === 'play') { banner('Kıl payı! +150', 'gold', 1000); G.bonus += 150; Audio.ring(); fxPop(playerRoot.position.clone().add(new V3(0, 1.5, 0)), false); } }, 200); }
       return;
     case 'pit':
-      if (u.open && !u.hit && P.animal !== 'alpaka' && Math.abs(z) < 1.7 && dx < 1.0 && G.py < .25 && !G.riding && !G.abilKind) { u.hit = true; hurt(null); banner('Çukura düştün!', 'red'); G.vy = 7; G.grounded = false; }
+      if (u.open && !u.hit && RA() !== 'alpaka' && Math.abs(z) < 1.7 && dx < 1.0 && G.py < .25 && !G.riding && !G.abilKind) { u.hit = true; hurt(null); banner('Çukura düştün!', 'red'); G.vy = 7; G.grounded = false; }
       return;
     case 'charger':
       if (u.hit || Math.abs(z) > 1.3 || dx > 1.1 || G.riding || G.py > 1.8) return; if (isDash()) { smash(o); G.bonus += 50; return; } if (G.abilKind) return; u.hit = true; hurt(o, true); return;
     case 'food':
       if (Math.abs(z) < .9 && dx < .95 && Math.abs(o.position.y - pc.y) < 1.5) collectFood(o); return;
     case 'ring':
-      if (!u.got && Math.abs(z) < .9 && dx < 1.2 && Math.abs(o.position.y - (G.py + .6)) < 1.5) { u.got = true; Audio.ring(); G.bonus += 50; G.food += 3; addXp(3); burst(wpos(o), 16, [0xffd23f, 0xffffff], 4, .6, 0); o.scale.setScalar(1.4); setTimeout(() => world.remove(o), 120); } return;
+      if (!u.got && Math.abs(z) < .9 && dx < 1.2 && Math.abs(o.position.y - (G.py + .6)) < 1.5) { u.got = true; Audio.ring(); G.bonus += 50; G.food += 3; addXp(3); burst(wpos(o), 16, [0xffd23f, 0xffffff], 4, .6, 0); fxRing(wpos(o), 0xfff3a0, 5); o.scale.setScalar(1.4); setTimeout(() => world.remove(o), 120); } return;
     case 'pickup':
       if (Math.abs(z) < 1.1 && dx < 1.1 && !G.riding && !G.chase) { burst(wpos(o), 30, [0x9be7ff, 0xffd23f, 0xffffff], 6, .9); world.remove(o); startRide(u.kind); } return;
     case 'pw':
@@ -2489,10 +2559,26 @@ function checkHit(o, pc) {
     case 'heart':
       if (Math.abs(z) < 1 && dx < 1) { world.remove(o); if (G.hearts < 3) G.hearts++; Audio.heart(); banner('Kalp +1 ❤️'); hudHearts(); } return;
     case 'gem':
-      if (Math.abs(z) < 1 && dx < 1) { world.remove(o); G.gems++; G.bonus += 250; P.coins = (P.coins || 0) + 10; Audio.gem(); addXp(5); burst(wpos(o), 20, [0x40e0ff, 0xffffff], 5, .7); banner('Elmas! +250 💎', 'gold', 1000); } return;
+      if (Math.abs(z) < 1 && dx < 1) { world.remove(o); G.gems++; G.bonus += 250; P.coins = (P.coins || 0) + 10; Audio.gem(); addXp(5); fxPop(wpos(o), false); banner('Elmas! +250 💎', 'gold', 1000); } return;
   }
 }
+/* ---- v12: başarı patlamaları (konfeti, parlayan halka, yıldızlar) ---- */
+const fx = [];
+const STAR_TEX = canvasTex(128, 128, (x, w, h) => { x.translate(w / 2, h / 2); x.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 24 : 56, a = i / 10 * Math.PI * 2 - Math.PI / 2; x.lineTo(Math.cos(a) * r, Math.sin(a) * r); } x.closePath(); x.fillStyle = '#ffe066'; x.fill(); x.lineWidth = 7; x.strokeStyle = '#fff'; x.stroke(); });
+const RING_TEX = canvasTex(256, 256, (x, w, h) => { const g = x.createRadialGradient(128, 128, 60, 128, 128, 126); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(.7, 'rgba(255,255,255,.95)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, w, h); });
+function fxSprite(tex, col, pos, s0, s1, dur, v) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color: col, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false })); sp.position.copy(pos); sp.scale.setScalar(s0); sp.userData = { t: 0, dur, s0, s1, v: v || null, spin: rnd(-4, 4) }; scene.add(sp); fx.push(sp); return sp; }
+function fxRing(pos, col = 0xffffff, size = 3.5) { if (fx.length < 80) { const r = fxSprite(RING_TEX, col, pos, .4, size, .4); r.userData.op = .55; } }
+function fxStars(pos, n = 8, sp = 5) { for (let i = 0; i < n && fx.length < 80; i++) fxSprite(STAR_TEX, 0xffffff, pos, rnd(.35, .7), rnd(.1, .3), rnd(.6, .9), new V3(rnd(-1, 1) * sp, rnd(.5, 1.4) * sp, rnd(-1, .3) * sp)); }
+function fxPop(pos, big) {
+  const cols = [0xffd23f, 0xff6f91, 0x5be38c, 0x5fb8ff, 0xffffff, 0xc58cff];
+  burst(pos, big ? 46 : 18, cols, big ? 7 : 5, big ? 1.1 : .7, -12, big ? 1.3 : 1);
+  fxRing(pos, pick([0xfff3a0, 0xffc0e0, 0xa0e8ff]), big ? 4.5 : 3); if (big) setTimeout(() => fxRing(pos, 0xffffff, 6), 120);
+  fxStars(pos, big ? 10 : 5, big ? 6 : 4);
+  if (big) { G.shake = Math.max(G.shake || 0, .12); Audio.tone(660, .08, 'triangle', .12); Audio.tone(990, .12, 'triangle', .1, .06); }
+}
+const dizzy = (() => { const g = new THREE.Group(); for (let i = 0; i < 4; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: STAR_TEX, depthWrite: false, fog: false })); s.scale.setScalar(.45); g.add(s); } g.visible = false; playerRoot.add(g); return g; })();
 function updateParts(dt) {
+  for (let i = fx.length - 1; i >= 0; i--) { const f = fx[i], u = f.userData; u.t += dt; const k = Math.min(1, u.t / u.dur); f.scale.setScalar(lerp(u.s0, u.s1, 1 - (1 - k) * (1 - k))); f.material.opacity = (1 - k * k) * (u.op || 1); f.material.rotation += u.spin * dt; if (u.v) { u.v.y -= 9 * dt; f.position.addScaledVector(u.v, dt); } if (k >= 1) { scene.remove(f); f.material.dispose(); fx.splice(i, 1); } }
   for (let i = parts.length - 1; i >= 0; i--) {
     const p = parts[i], u = p.userData; u.life -= dt; u.v.y += u.g * dt; p.position.addScaledVector(u.v, dt); p.rotation.x += u.spin * dt; p.rotation.y += u.spin * dt; p.scale.multiplyScalar(1 - dt * .8);
     if (u.life <= 0) { scene.remove(p); parts.splice(i, 1); }
@@ -2533,7 +2619,7 @@ function setupIdleScene() {
   roadTick(); applyEnv(0, true);
   playerRoot.position.set(0, 0, 0); playerRoot.rotation.set(0, Math.PI, 0); world.rotation.y = 0;
 }
-function clearTransient() { if (G.vine) { playerRoot.remove(G.vine); G.vine = null; } if (G.kite) { playerRoot.remove(G.kite); G.kite = null; } $('chaseMeter').classList.add('hidden'); G.abilKind = null; G.inTunnel = false; parts.forEach(p => scene.remove(p)); parts.length = 0; leaving.forEach(v => scene.remove(v)); leaving.length = 0; if (chaser) { scene.remove(chaser); chaser = null; } vehicleHolder.clear(); [rain, snow, sand, bubbles, fireflies, speedLines].forEach(p => p.visible = false); }
+function clearTransient() { G.zone = null; G.zoneLeft = 0; G.biomeSwapT = 0; G.decorQ = []; G.stunT = 0; try { dizzy.visible = false; } catch (e) {} fx.forEach(f => scene.remove(f)); fx.length = 0; if (G.vine) { playerRoot.remove(G.vine); G.vine = null; } if (G.kite) { playerRoot.remove(G.kite); G.kite = null; } $('chaseMeter').classList.add('hidden'); G.abilKind = null; G.inTunnel = false; parts.forEach(p => scene.remove(p)); parts.length = 0; leaving.forEach(v => scene.remove(v)); leaving.length = 0; if (chaser) { scene.remove(chaser); chaser = null; } vehicleHolder.clear(); [rain, snow, sand, bubbles, fireflies, speedLines].forEach(p => p.visible = false); }
 function updateIdle(dt) {
   G.t += dt; if (rig && rig.mixer) rig.mixer.update(dt); playerRoot.position.set(0, 0, 0); playerRoot.rotation.set(0, Math.PI, 0);
   const v = vehicleHolder.children[0];
@@ -2584,7 +2670,7 @@ $('profCancel').onclick = () => { $('profNew').classList.add('hidden'); if (P) s
 function goMenu() {
   if (!P) { goProfiles(true); return; }
   if (G.state === 'play' || G.state === 'paused' || G.state === 'over' || G.state === 'boot') { Audio.stopAll(); setupIdleScene(); }
-  G.state = 'menu'; ensureOwned(P); vehicleHolder.clear(); setAnimal(P.animal);
+  G.state = 'menu'; G.animal = null; ensureOwned(P); vehicleHolder.clear(); setAnimal(P.animal);
   show('menu'); refreshMenu();
   Device.back = () => Device.exitApp();
 }
@@ -2598,7 +2684,7 @@ function refreshMenu() {
   const cp = P.checkpoint && P.checkpoint.bolum > 1;
   $('playBtn').textContent = cp ? `▶ BÖLÜM ${P.checkpoint.bolum}` : 'OYNA'; $('newBtn').classList.toggle('hidden', !cp);
 }
-let gTab = 'animal'; const CHEST = 150;
+let gTab = 'vehicle'; const CHEST = 150;
 function goGarage() { ensureOwned(P); buyArm = null; G.state = 'garage'; show('garage'); renderGarage(); garagePreview(); Device.back = () => goMenu(); }
 function garagePreview() { vehicleHolder.clear(); if (gTab === 'vehicle') vehicleHolder.add(buildVehicle(P.vehicle)); }
 let buyArm = null;
@@ -2697,10 +2783,11 @@ const AFF = { kurbaga: ['bangladesh', 'amazon'], tavsan: ['bahce'], kedi: ['bahc
 function startGame(cont) {
   Audio.init(); Device.fullscreen(); Device.keepAwake();
   [...world.children].forEach(o => world.remove(o)); clearTransient();
-  G.mode = P.mode === 'yetiskin' ? 'yetiskin' : 'cocuk'; resetRun(); setAnimal(P.animal);
+  G.mode = P.mode === 'yetiskin' ? 'yetiskin' : 'cocuk';
+  const ob = openBiomes(); let b = pick(ob.length ? ob : [0]);
+  const cp0 = cont && P.checkpoint && P.checkpoint.bolum > 1 ? P.checkpoint : null; if (cp0) b = clamp(cp0.biomeIdx, 0, BIOMES.length - 1);
+  G.animal = BIOME_ANIMAL[BIOMES[b].key] || 'tavsan'; resetRun(); setAnimal(G.animal);
   G.state = 'play'; playerRoot.rotation.set(0, 0, 0); playerRoot.position.set(0, 0, 0); world.rotation.y = 0;
-  let b = rndi(0, BIOMES.length - 1);
-  if (Math.random() < .55 && AFF[P.animal]) b = BIOMES.findIndex(x => x.key === pick(AFF[P.animal]));
   const cp = cont && P.checkpoint && P.checkpoint.bolum > 1 ? P.checkpoint : null;
   if (cp) { b = clamp(cp.biomeIdx, 0, BIOMES.length - 1); G.bolum = cp.bolum; G.stage = cp.stage || 0; } else P.checkpoint = null;
   $('bolum').textContent = 'Bölüm ' + G.bolum; $('abFill').style.width = '0%'; $('abil').classList.remove('full');
@@ -2712,7 +2799,7 @@ function startGame(cont) {
   camPos.set(0, 3, 4); camLook.set(0, 1.2, -8);
   show(null); hudAll(); $('rideBar').classList.add('hidden'); $('pwBadge').classList.add('hidden'); $('turnArrows').classList.add('hidden'); $('score').textContent = '0';
   Music.play(bb.music); Audio.setAmbient();
-  banner(`Bölüm ${G.bolum}<small>${bb.flag} ${bb.name} • ${TOD[G.tod].name}</small>`, 'gold', 2600);
+  banner(`Bölüm ${G.bolum}<small>${bb.flag} ${bb.name} • ${itemById('animal', G.animal).icon} ${itemById('animal', G.animal).name} ile koş!</small>`, 'gold', 2800);
   if (P.runs < 2) setTimeout(() => hint('⬅ ➡ dokun: yol değiştir • ⬆ kaydır: zıpla • ⬇ kaydır: eğil', 5000), 2000);
   P.runs++; Store.save();
   G.camEvent = { type: 'pano', t: 0, dur: 2 };
@@ -2810,7 +2897,7 @@ const Cloud = {
   },
   async setPin(pin) { this.pin = pin; if (this.ready) await this.fs.setDoc(this.doc('meta', 'settings'), { pin }, { merge: true }).catch(() => {}); },
   sendIdea(text) {
-    const it = { pid: P ? P.id : '', name: P ? P.name : '', icon: P ? P.icon : '', text, ts: Date.now(), ver: 'v11' };
+    const it = { pid: P ? P.id : '', name: P ? P.name : '', icon: P ? P.icon : '', text, ts: Date.now(), ver: 'v12' };
     (Store.d.ideas || (Store.d.ideas = [])).push(it); Store.save(); this.flushIdeas();
   },
   flushIdeas() {
@@ -2938,7 +3025,7 @@ $('whoBtn').onclick = () => { Audio.init(); goProfiles(false); };
 $('gBack').onclick = () => goMenu();
 $('bBack').onclick = () => goMenu();
 $('sBack').onclick = () => leaveSettings();
-$('shareBest').onclick = () => share(`🏆 Orman Koşusu\n${P.icon} ${P.name}: en iyi skor ${P.best} puan, Seviye ${curLevel()}\n${siteUrl()}`);
+if ($('shareBest')) $('shareBest').onclick = () => share(`🏆 Orman Koşusu\n${P.icon} ${P.name}: en iyi skor ${P.best} puan, Seviye ${curLevel()}\n${siteUrl()}`);
 document.addEventListener('visibilitychange', () => { if (document.hidden) flushTime(); else if (Cloud.ready) Cloud.pullPlayers(); });
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { gTab = b.dataset.tab; renderGarage(); garagePreview(); Audio.lane(); });
 $('pauseBtn').onclick = e => { e.stopPropagation(); pauseGame(); };
@@ -2946,9 +3033,32 @@ $('resumeBtn').onclick = () => resumeGame();
 $('pSettingsBtn').onclick = () => goSettings();
 $('pMenuBtn').onclick = () => { if (Audio.ctx) Audio.ctx.resume(); goMenu(); };
 $('againBtn').onclick = () => askMode(false);
-$('shareBtn').onclick = () => share(G.lastShare || '');
+if ($('shareBtn')) $('shareBtn').onclick = () => share(G.lastShare || '');
 $('oGarageBtn').onclick = () => { goMenu(); goGarage(); };
 $('oMenuBtn').onclick = () => goMenu();
+
+/* ---- v12: açılışta tüm malzemeleri bir kez derle (geçişlerdeki takılmayı önler) ---- */
+function warmUp() {
+  const grp = new THREE.Group(); let x = -30;
+  const put = o => { if (!o) return; o.position.set(x, 0, -25); x += 2; grp.add(o); };
+  const tries = f => { try { put(f()); } catch (e) {} };
+  const bi0 = G.biomeIdx;
+  BIOMES.forEach((b, i) => { G.biomeIdx = i; (b.decor || []).forEach(([k]) => tries(() => (D[k] || D.bush)())); ['tree', 'boulder', 'fairy', 'pillar', 'ice'].forEach(w => tries(() => wallProp(w))); });
+  BIOMES.forEach(b => { tries(() => buildLandmarks(b.key)); tries(() => buildSkyExtras(b.key)); });
+  tries(() => buildGrassStrip(0x5aaf4a, 0xffd23f)); tries(() => buildGrassStrip(0x5aaf4a, 0));
+  G.biomeIdx = bi0;
+  Object.keys(ZONES).forEach(k => ZONES[k].decor.forEach(([d]) => tries(() => D[d]())));
+  ITEMS.vehicle.forEach(v => tries(() => buildVehicle(v.id))); tries(() => buildVehicle('vagon'));
+  [buildGem, buildHeartItem, buildRing, buildBoulder, buildHayBale, buildStormWall, buildSpring, buildKite, buildMineEntrance, buildPit, buildSwimZone, buildRavine, buildMineFrame, buildPortal].forEach(f => tries(f));
+  tries(() => buildTunnel(true, 0x6a6056)); tries(() => buildPlatform(2.3, 28, 0x8a5a2a, 0xb07a45)); tries(() => buildLavaStrip(9.4));
+  tries(() => { const g = new THREE.Group(); g.add(mesh(geo('sgb', () => new THREE.PlaneGeometry(3.2, 1.6)), new THREE.MeshBasicMaterial({ map: signTex('7', -1) }))); return g; });
+  Object.keys(MODELS).forEach(k => tries(() => makeModel(k)));
+  Object.keys(FOOD).forEach(k => tries(() => foodProto(k).clone()));
+  tries(() => { const g = new THREE.Group(); fxRing(new V3(0, 0, 0)); return g; });
+  scene.add(grp);
+  try { renderer.compile(scene, camera); } catch (e) {}
+  scene.remove(grp);
+}
 
 /* ---- dokunmatik / klavye ---- */
 let touch = null;
@@ -2988,6 +3098,7 @@ applyQuality();
 Device.setup();
 (async () => {
   await Promise.all([loadNature(), loadModels(p => { $('ldText').textContent = 'Hayvanlar geliyor... %' + Math.round(p * 100); }), loadTextures()]);
+  try { warmUp(); } catch (e) { console.warn('warmup', e); }
   $('loading').classList.add('hidden');
   if (P) ensureOwned(P);
   setAnimal(P ? P.animal : 'tavsan');
