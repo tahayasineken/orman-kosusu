@@ -181,6 +181,7 @@
   <div class="subbar"><div id="bolum">Bölüm 1</div><div id="abil"><span id="abIcon">🐵</span><div class="bar"><i id="abFill"></i></div></div></div>
   <div id="qwrap" class="off"><div id="qcard"><span id="qtext"></span></div><div id="qstage"></div></div>
   <div id="chaseMeter" class="hidden"><div class="track"></div><span class="them" id="cmThem">🐺</span><span class="me" id="cmMe">🦊</span></div>
+  <button id="abBtn" class="hidden" style="position:fixed;right:14px;bottom:calc(env(safe-area-inset-bottom) + 90px);width:86px;height:86px;border-radius:50%;pointer-events:auto;z-index:12;font-size:40px;line-height:1;background:radial-gradient(#fff6c0,#ffb300);border:4px solid #fff;box-shadow:0 0 24px #ffd23f,0 6px 0 #a96b00;animation:pulse .4s infinite alternate;font-family:inherit"><span id="abBtnIc">🐰</span><small style="display:block;font-size:12px;font-weight:900;color:#5a2d0c">DOKUN!</small></button>
   <div id="pwBadge" class="hidden" style="position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 150px);background:rgba(0,0,0,.45);padding:4px 12px;border-radius:14px;font-weight:900;font-size:18px;z-index:6;pointer-events:none"></div>
   <div id="rideBar" class="hidden"><span id="rideIcon">✈️</span><div class="bar"><i id="rideFill"></i></div></div>
   <div id="turnArrows" class="hidden"><div id="arL">⬅<b id="arLv"></b></div><div id="arR"><b id="arRv"></b>➡</div></div>
@@ -226,9 +227,10 @@
     <div class="row"><button class="big green" id="playBtn">OYNA</button><button class="big orange hidden" id="newBtn" style="flex:.45;font-size:17px">BAŞTAN</button></div>
     <div class="row"><button class="big blue" id="garageBtn">🛠️ GARAJ</button><button class="big gold" id="boardBtn">🏆 SKOR</button></div>
     <div class="row"><button class="big purple" id="settingsBtn">⚙️ AYARLAR</button><button class="big orange" id="ideaBtn">💡 FİKRİM VAR</button></div>
+    <div id="mMaps" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:8px"></div>
     <div class="stats small" id="mStats"></div>
   </div>
-  <div id="verTag">v12</div>
+  <div id="verTag">v14</div>
 </div>
 
 <!-- GARAJ -->
@@ -379,7 +381,13 @@ const ITEMS = {
     { id: 'kaykay', name: 'Roket Kaykay', icon: '🛹', lv: 2, price: 200, desc: 'Çok hızlı, engelleri parçalar' },
     { id: 'tekne', name: 'Sürat Teknesi', icon: '🚤', lv: 5, price: 450, desc: 'Yol nehre döner, suda süzül' },
     { id: 'denizalti', name: 'Denizaltı', icon: '🤿', lv: 8, price: 700, desc: 'Su altına dal, balıkları gör' },
-    { id: 'roket', name: 'Uzay Roketi', icon: '🚀', lv: 11, price: 1000, desc: 'Yıldızların arasına çık' }
+    { id: 'roket', name: 'Uzay Roketi', icon: '🚀', lv: 11, price: 1000, desc: 'Yıldızların arasına çık' },
+    { id: 'kartal', name: 'Dev Kartal', icon: '🦅', lv: 3, price: 300, desc: 'Kanat çırparak ormanın üstünde uç' },
+    { id: 'hali', name: 'Uçan Halı', icon: '🧞', lv: 4, price: 350, desc: 'Süzülen sihirli halı, altın halkalar' },
+    { id: 'ufo', name: 'Uzay Gemisi', icon: '🛸', lv: 6, price: 550, desc: 'Işıklı uçan daire, dönerek uçar' },
+    { id: 'yunus', name: 'Yunus', icon: '🐬', lv: 7, price: 500, desc: 'Yol nehre döner, yunusla zıpla' },
+    { id: 'balon', name: 'Sıcak Hava Balonu', icon: '🎈', lv: 9, price: 650, desc: 'Gökyüzünde yavaş ve yüksek süzül' },
+    { id: 'ejderha', name: 'Minik Ejderha', icon: '🐉', lv: 12, price: 1200, desc: 'Ateş püskürten sevimli ejderha' }
   ],
   armor: [
     { id: 'tisort', name: 'Kalkansız', icon: '🙂', lv: 1, price: 0, shield: 0, refill: 0, desc: 'Kalkan yok' },
@@ -411,7 +419,7 @@ const ANIMAL_IDS = ITEMS.animal.map(a => a.id);
 const abType = k => (ITEMS.animal.find(a => a.id === k) || {}).ab || k;   // hop, dash, glide, frog, leap, kite
 const isDash = () => G.abilKind && abType(G.abilKind) === 'dash';
 const animalOfIcon = ic => (ITEMS.animal.find(a => a.icon === ic) || {}).id;
-function normAnimal(q) { if (!ANIMAL_IDS.includes(q.animal)) q.animal = animalOfIcon(q.icon) || 'tavsan'; else if (animalOfIcon(q.icon) && animalOfIcon(q.icon) !== q.animal && !q._animalSet) q.animal = animalOfIcon(q.icon); q.icon = itemById('animal', q.animal).icon; q._animalSet = true; if (q.owned) q.owned.animal = ANIMAL_IDS.slice(); return q; }
+function normAnimal(q) { if (!ANIMAL_IDS.includes(q.animal)) q.animal = animalOfIcon(q.icon) || 'tavsan'; else if (animalOfIcon(q.icon) && animalOfIcon(q.icon) !== q.animal && !q._animalSet) q.animal = animalOfIcon(q.icon); if (!q.icon || animalOfIcon(q.icon)) q.icon = '⭐'; q._animalSet = true; if (q.owned) q.owned.animal = ANIMAL_IDS.slice(); return q; }
 Store.load();
 let P = Store.p;   // aktif profil
 
@@ -992,49 +1000,110 @@ function buildHat(id) {
 /* =====================================================================
    ARAÇLAR
    ===================================================================== */
+function starMesh(r, col) { const sh = new THREE.Shape(); for (let i = 0; i < 10; i++) { const rr = i % 2 ? r * .45 : r, a = i / 10 * Math.PI * 2 + Math.PI / 2; i ? sh.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : sh.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); } return mesh(new THREE.ShapeGeometry(sh), basic(col, { side: THREE.DoubleSide })); }
 function buildVehicle(kind) {
   if (kind === 'vagon') return buildCart();
   const g = new THREE.Group(); g.userData.kind = kind;
+  const lathe = (pts, seg = 20) => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg);
+  const flame = (r, l, z, y = 0, col = 0xffa726) => { const f = mesh(new THREE.ConeGeometry(r, l, 12), basic(col, { transparent: true, opacity: .9 }), 0, y, z); f.rotation.x = Math.PI / 2; return f; };
   if (kind === 'jet') {
-    const body = mesh(new THREE.CylinderGeometry(.34, .46, 2.8, 16), smooth(0xeef3f7)); body.rotation.x = -Math.PI / 2; g.add(body);
-    const nose = mesh(new THREE.ConeGeometry(.34, 1, 16), smooth(0xe53935), 0, 0, -1.9); nose.rotation.x = -Math.PI / 2; g.add(nose);
-    const wing = mesh(new THREE.BoxGeometry(3.8, .09, 1), mat(0xe53935), 0, -.08, .2); g.add(wing);
-    [-1, 1].forEach(s => { g.add(mesh(new THREE.BoxGeometry(.12, .35, .5), mat(0xffd23f), 1.9 * s, .08, .35)); const en = mesh(new THREE.CylinderGeometry(.12, .12, .7, 10), mat(0x555555), .9 * s, -.22, .2); en.rotation.x = Math.PI / 2; g.add(en); });
-    g.add(mesh(new THREE.BoxGeometry(1.4, .06, .45), mat(0xe53935), 0, .05, 1.2));
-    g.add(mesh(new THREE.BoxGeometry(.08, .8, .65), mat(0xe53935), 0, .48, 1.15));
-    g.add(sph(.3, smooth(0x4fc3f7, { emissive: 0x0a3550 }), 0, .26, -.8, 1, .7, 1.6));
-    const fl = mesh(new THREE.ConeGeometry(.32, 1.3, 12), basic(0xffa726, { transparent: true, opacity: .9 }), 0, 0, 2.05); fl.rotation.x = Math.PI / 2; g.add(fl);
-    const fl2 = mesh(new THREE.ConeGeometry(.17, .8, 10), basic(0xfff3b0), 0, 0, 1.85); fl2.rotation.x = Math.PI / 2; g.add(fl2);
-    g.userData.flames = [fl, fl2]; g.userData.seat = -.02; g.userData.pose = 'sit';
+    // v14: sevimli oyuncak jet: yuvarlak gövde, büyük kokpit, yıldızlı kanatlar
+    const body = mesh(lathe([[0, -1.7], [.32, -1.5], [.5, -.9], [.55, .2], [.45, 1.1], [.28, 1.5], [0, 1.55]]), smooth(0xffffff)); body.rotation.x = -Math.PI / 2; g.add(body);
+    g.add(mesh(new THREE.TorusGeometry(.54, .07, 8, 24), smooth(0xe53935), 0, 0, -.2));
+    g.add(sph(.36, smooth(0x4fc3f7, { transparent: true, opacity: .75 }), 0, .32, -.55, 1, .8, 1.7, 16));
+    const ws = new THREE.Shape(); ws.moveTo(-.4, 0); ws.lineTo(-2.2, .45); ws.lineTo(-2.2, .8); ws.lineTo(-.4, .9); ws.lineTo(.4, .9); ws.lineTo(2.2, .8); ws.lineTo(2.2, .45); ws.lineTo(.4, 0); ws.closePath();
+    const wing = mesh(new THREE.ExtrudeGeometry(ws, { depth: .1, bevelEnabled: true, bevelSize: .04, bevelThickness: .04, bevelSegments: 2 }), smooth(0x1e88e5), 0, -.1, -.6); wing.rotation.x = -Math.PI / 2; g.add(wing);
+    [-1, 1].forEach(s => { g.add(sph(.16, smooth(s < 0 ? 0xff5252 : 0x69f0ae, { emissive: s < 0 ? 0x550000 : 0x005522 }), 2.2 * s, -.05, .05)); const st = starMesh(.22, 0xffd23f); st.position.set(1.3 * s, .06, .1); st.rotation.x = -Math.PI / 2; g.add(st); });
+    [-1, 1].forEach(s => { const f = mesh(new THREE.BoxGeometry(.08, .7, .55), smooth(0x1e88e5), .35 * s, .45, 1.15); f.rotation.z = -.25 * s; g.add(f); });
+    const fl = flame(.3, 1.2, 2.1), fl2 = flame(.16, .7, 1.85, 0, 0xfff3b0); g.add(fl, fl2);
+    g.userData.flames = [fl, fl2]; g.userData.seat = .12; g.userData.pose = 'sit';
   } else if (kind === 'kaykay') {
-    g.add(mesh(new THREE.BoxGeometry(1.05, .12, 2.3), mat(0x8e24aa), 0, .32, 0));
-    g.add(mesh(new THREE.BoxGeometry(.3, .125, 2.3), mat(0xffd23f), 0, .325, 0));
-    [[-.4, -.75], [.4, -.75], [-.4, .75], [.4, .75]].forEach(([x, z]) => { const w = mesh(geo('wheel', () => new THREE.CylinderGeometry(.16, .16, .14, 12)), mat(0x222222), x, .16, z); w.rotation.z = Math.PI / 2; g.add(w); });
-    const boost = mesh(new THREE.CylinderGeometry(.16, .2, .6, 10), mat(0x555555), 0, .52, 1.1); boost.rotation.x = Math.PI / 2; g.add(boost);
-    const fl = mesh(new THREE.ConeGeometry(.17, .8, 10), basic(0x4fc3f7, { transparent: true, opacity: .9 }), 0, .52, 1.75); fl.rotation.x = Math.PI / 2; g.add(fl);
-    g.userData.flames = [fl]; g.userData.seat = .38; g.userData.pose = 'board';
+    // v14: ışıklı uçan kaykay + iki mini roket
+    const deck = mesh(new THREE.CapsuleGeometry(.5, 1.5, 6, 16), smooth(0x7e57c2)); deck.rotation.x = Math.PI / 2; deck.scale.set(1, 1, .22); deck.position.y = .42; g.add(deck);
+    const zig = canvasTex(64, 128, (x, w, h) => { x.fillStyle = '#ffd23f'; x.beginPath(); x.moveTo(38, 4); x.lineTo(14, 70); x.lineTo(32, 70); x.lineTo(24, 124); x.lineTo(52, 50); x.lineTo(34, 50); x.closePath(); x.fill(); });
+    const dec = mesh(new THREE.PlaneGeometry(.6, 1.6), new THREE.MeshBasicMaterial({ map: zig, transparent: true })); dec.rotation.x = -Math.PI / 2; dec.position.y = .54; g.add(dec);
+    const glow = mesh(new THREE.CircleGeometry(.9, 24), basic(0x40e0ff, { transparent: true, opacity: .45, depthWrite: false })); glow.rotation.x = -Math.PI / 2; glow.scale.set(.75, 1.6, 1); glow.position.y = .06; g.add(glow);
+    [-1, 1].forEach(s => { const r = mesh(new THREE.CylinderGeometry(.13, .16, .7, 10), smooth(0xe53935), .55 * s, .42, .55); r.rotation.x = Math.PI / 2; g.add(r); const c = mesh(new THREE.ConeGeometry(.13, .25, 10), smooth(0xffffff), .55 * s, .42, .08); c.rotation.x = -Math.PI / 2; g.add(c); });
+    const f1 = flame(.12, .7, 1.2, .42, 0x4fc3f7), f2 = flame(.12, .7, 1.2, .42, 0x4fc3f7); f1.position.x = -.55; f2.position.x = .55; g.add(f1, f2);
+    g.userData.flames = [f1, f2]; g.userData.glow = glow; g.userData.seat = .5; g.userData.pose = 'board';
   } else if (kind === 'tekne') {
-    g.add(mesh(new THREE.BoxGeometry(1.5, .55, 2.4), mat(0xffffff), 0, .2, .2));
-    g.add(mesh(new THREE.BoxGeometry(1.52, .2, 2.42), mat(0xe53935), 0, -.02, .2));
-    const bow = mesh(new THREE.ConeGeometry(.78, 1.2, 4), mat(0xffffff), 0, .2, -1.55); bow.rotation.set(-Math.PI / 2, Math.PI / 4, 0); bow.scale.set(1, 1, .5); g.add(bow);
-    g.add(mesh(new THREE.BoxGeometry(1.1, .6, .12), smooth(0x7fd8ff, { transparent: true, opacity: .7 }), 0, .75, -.5));
-    g.add(mesh(new THREE.BoxGeometry(.5, .6, .45), mat(0x333333), 0, .45, 1.5));
-    g.userData.seat = .05; g.userData.pose = 'sit';
+    // v14: kıvrımlı sürat teknesi, ön cam, bayrak
+    const hs = new THREE.Shape(); hs.moveTo(-.8, 1.3); hs.lineTo(.8, 1.3); hs.lineTo(.85, -.4); hs.quadraticCurveTo(.6, -1.6, 0, -2); hs.quadraticCurveTo(-.6, -1.6, -.85, -.4); hs.closePath();
+    const hull = mesh(new THREE.ExtrudeGeometry(hs, { depth: .55, bevelEnabled: true, bevelSize: .12, bevelThickness: .12, bevelSegments: 3 }), smooth(0xffffff)); hull.rotation.x = Math.PI / 2; hull.position.y = .5; g.add(hull);
+    const band = mesh(new THREE.ExtrudeGeometry(hs, { depth: .16, bevelEnabled: false }), smooth(0xe53935)); band.rotation.x = Math.PI / 2; band.position.y = .02; band.scale.set(1.04, 1.02, 1); g.add(band);
+    const wsc = mesh(new THREE.BoxGeometry(1.3, .55, .08), smooth(0x7fd8ff, { transparent: true, opacity: .6 }), 0, .8, -.45); wsc.rotation.x = -.45; g.add(wsc);
+    g.add(mesh(new THREE.CylinderGeometry(.03, .03, 1.2, 6), mat(0x795548), .6, 1.1, 1.1));
+    const flag = mesh(new THREE.PlaneGeometry(.5, .32), basic(0xe53935, { side: THREE.DoubleSide }), .85, 1.55, 1.1); g.add(flag);
+    g.add(mesh(new THREE.BoxGeometry(.45, .5, .4), smooth(0x37474f), 0, .55, 1.45));
+    g.userData.flag = flag; g.userData.seat = .15; g.userData.pose = 'sit';
   } else if (kind === 'denizalti') {
-    const hull = mesh(new THREE.CapsuleGeometry(.62, 1.8, 6, 16), smooth(0xffcf2e)); hull.rotation.x = Math.PI / 2; g.add(hull);
-    g.add(mesh(new THREE.BoxGeometry(.6, .5, .9), smooth(0xffcf2e), 0, .7, .1));
-    g.add(mesh(new THREE.CylinderGeometry(.05, .05, .6, 8), mat(0x777777), .15, 1.15, .3));
-    [-1, 1].forEach(s => { for (let i = 0; i < 3; i++) { const w = mesh(geo('port', () => new THREE.CircleGeometry(.16, 16)), basic(0x7fd8ff), .63 * s, .05, -.6 + i * .6); w.rotation.y = s * Math.PI / 2; g.add(w); } });
-    const prop = new THREE.Group(); prop.position.z = 1.6; for (let i = 0; i < 3; i++) { const b = mesh(new THREE.BoxGeometry(.08, .6, .05), mat(0x555555)); b.rotation.z = i * Math.PI * 2 / 3; prop.add(b); } g.add(prop);
-    g.userData.prop = prop; g.userData.seat = .48; g.userData.pose = 'sit';
+    // v14: büyük ön camlı, yüzgeçli sarı denizaltı
+    const hull = mesh(lathe([[0, -1.6], [.45, -1.45], [.68, -.9], [.72, .3], [.6, 1.1], [.35, 1.5], [0, 1.6]]), smooth(0xffcf2e)); hull.rotation.x = -Math.PI / 2; g.add(hull);
+    g.add(sph(.5, smooth(0x80deea, { transparent: true, opacity: .7 }), 0, .05, -1.35, 1, 1, .6, 18));
+    const tower = mesh(new THREE.CapsuleGeometry(.28, .4, 4, 12), smooth(0xffb300), 0, .75, .1); tower.scale.z = 1.6; g.add(tower);
+    g.add(mesh(new THREE.CylinderGeometry(.05, .05, .7, 8), mat(0x777777), .1, 1.3, .2)); g.add(mesh(new THREE.BoxGeometry(.12, .1, .25), mat(0x777777), .1, 1.65, .1));
+    [-1, 1].forEach(s => { g.add(mesh(new THREE.BoxGeometry(.7, .06, .35), smooth(0xff7043), .7 * s, 0, 1.0)); for (let i = 0; i < 2; i++) { const w = mesh(geo('port', () => new THREE.CircleGeometry(.16, 16)), basic(0x7fd8ff), .71 * s, .1, -.3 + i * .55); w.rotation.y = s * Math.PI / 2; g.add(w); } });
+    g.add(mesh(new THREE.TorusGeometry(.35, .05, 6, 18), mat(0x555555), 0, 0, 1.65));
+    const prop = new THREE.Group(); prop.position.z = 1.65; for (let i = 0; i < 3; i++) { const b = mesh(new THREE.BoxGeometry(.08, .55, .05), mat(0xff7043)); b.rotation.z = i * Math.PI * 2 / 3; prop.add(b); } g.add(prop);
+    g.userData.prop = prop; g.userData.seat = .55; g.userData.pose = 'sit';
   } else if (kind === 'roket') {
-    const body = mesh(new THREE.CylinderGeometry(.5, .5, 2.6, 16), smooth(0xf5f5f5)); body.rotation.x = -Math.PI / 2; g.add(body);
-    const nose = mesh(new THREE.ConeGeometry(.5, 1.2, 16), smooth(0xe53935), 0, 0, -1.9); nose.rotation.x = -Math.PI / 2; g.add(nose);
-    for (let i = 0; i < 3; i++) { const a = i * Math.PI * 2 / 3 + Math.PI / 2; const f = mesh(new THREE.BoxGeometry(.06, .7, .7), mat(0xe53935), Math.cos(a) * .6, Math.sin(a) * .6, 1.1); f.rotation.z = a - Math.PI / 2; g.add(f); }
-    const ring = mesh(new THREE.TorusGeometry(.5, .06, 6, 20), mat(0x2c7fe0), 0, 0, .3); g.add(ring);
-    const fl = mesh(new THREE.ConeGeometry(.45, 1.8, 12), basic(0xff7043, { transparent: true, opacity: .9 }), 0, 0, 2.2); fl.rotation.x = Math.PI / 2; g.add(fl);
-    const fl2 = mesh(new THREE.ConeGeometry(.25, 1.1, 10), basic(0xfff3b0), 0, 0, 1.9); fl2.rotation.x = Math.PI / 2; g.add(fl2);
-    g.userData.flames = [fl, fl2]; g.userData.seat = .02; g.userData.pose = 'sit';
+    // v14: çizgi film roketi: yuvarlak gövde, lomboz, kıvrık kanatçıklar
+    const body = mesh(lathe([[0, -2.1], [.25, -1.9], [.52, -1.3], [.66, -.3], [.62, .8], [.5, 1.4], [.42, 1.55]], 24), smooth(0xf5f5f5)); body.rotation.x = -Math.PI / 2; g.add(body);
+    const nose = mesh(lathe([[0, -2.15], [.27, -1.88], [.42, -1.6], [0, -1.6]], 20), smooth(0xe53935)); nose.rotation.x = -Math.PI / 2; g.add(nose);
+    [-.6, .4].forEach(z => g.add(mesh(new THREE.TorusGeometry(.64, .06, 8, 24), smooth(0x1e88e5), 0, 0, z)));
+    const port = mesh(new THREE.TorusGeometry(.2, .05, 8, 20), smooth(0xffd23f), 0, .62, -.9); port.rotation.x = Math.PI / 2; g.add(port); g.add(sph(.17, smooth(0x4fc3f7, { emissive: 0x0a3550 }), 0, .6, -.9, 1, .5, 1));
+    for (let i = 0; i < 3; i++) { const a = i * Math.PI * 2 / 3 + Math.PI / 2; const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.quadraticCurveTo(.7, .1, .75, .9); sh.lineTo(0, .6); sh.closePath(); const f = mesh(new THREE.ExtrudeGeometry(sh, { depth: .08, bevelEnabled: false }), smooth(0xe53935)); f.position.set(Math.cos(a) * .5, Math.sin(a) * .5, .9); f.rotation.set(Math.PI / 2, 0, a - Math.PI / 2); g.add(f); }
+    const noz = mesh(new THREE.CylinderGeometry(.42, .5, .3, 16), smooth(0x607d8b), 0, 0, 1.65); noz.rotation.x = Math.PI / 2; g.add(noz);
+    const fl = flame(.45, 1.9, 2.6, 0, 0xff7043), fl2 = flame(.25, 1.1, 2.2, 0, 0xfff3b0); g.add(fl, fl2);
+    g.userData.flames = [fl, fl2]; g.userData.seat = .55; g.userData.pose = 'sit';
+  }
+  else if (kind === 'kartal') {
+    const br = smooth(0x7a4a26), wh = smooth(0xffffff), yl = smooth(0xffb300);
+    g.add(sph(.6, br, 0, 0, 0, 1, .8, 1.6, 14)); g.add(sph(.36, wh, 0, .28, -.95, 1, 1, 1.1, 12));
+    const bk = mesh(new THREE.ConeGeometry(.13, .4, 8), yl, 0, .2, -1.35); bk.rotation.x = -Math.PI / 2 - .3; g.add(bk);
+    [-1, 1].forEach(s => { g.add(sph(.06, basic(0x111111), .17 * s, .36, -1.2)); });
+    const wings = [-1, 1].map(s => { const w = new THREE.Group(); w.position.set(.45 * s, .1, -.1); w.add(mesh(new THREE.BoxGeometry(2.4, .08, .9), br, 1.2 * s, 0, 0)); for (let i = 0; i < 4; i++) w.add(mesh(geo('feath', () => new THREE.BoxGeometry(.5, .06, .7)), smooth(0x5a3418), (2.1 + i * .05) * s, 0, .25 + i * .05)); g.add(w); return w; });
+    g.add(mesh(new THREE.BoxGeometry(.8, .06, .6), smooth(0x5a3418), 0, .05, 1.1));
+    g.userData.wings = wings; g.userData.seat = .55; g.userData.pose = 'sit';
+  } else if (kind === 'ejderha') {
+    const gr = smooth(0x4caf50), lg = smooth(0xc5e1a5), rd = smooth(0xff7043);
+    const body = mesh(new THREE.CapsuleGeometry(.55, 1.4, 6, 14), gr); body.rotation.x = Math.PI / 2; g.add(body);
+    g.add(sph(.6, lg, 0, -.18, 0, .8, .7, 1.4, 12));
+    const neck = mesh(new THREE.CylinderGeometry(.22, .32, .9, 10), gr, 0, .45, -1.05); neck.rotation.x = .7; g.add(neck);
+    g.add(sph(.42, gr, 0, .85, -1.45, 1, .9, 1.25, 14)); g.add(sph(.2, lg, 0, .72, -1.85, 1.3, .8, 1, 10));
+    [-1, 1].forEach(s => { g.add(sph(.12, basic(0xffffff), .2 * s, 1.0, -1.7)); g.add(sph(.06, basic(0x111111), .21 * s, 1.0, -1.79)); const h = mesh(geo('dhorn', () => new THREE.ConeGeometry(.08, .35, 6)), smooth(0xfff3b0), .2 * s, 1.25, -1.3); h.rotation.x = -.5; g.add(h); });
+    for (let i = 0; i < 5; i++) g.add(mesh(geo('dspk', () => new THREE.ConeGeometry(.12, .3, 5)), rd, 0, .55, -.4 + i * .35));
+    const tail = mesh(new THREE.ConeGeometry(.28, 1.6, 10), gr, 0, 0, 1.6); tail.rotation.x = Math.PI / 2; g.add(tail);
+    const wings = [-1, 1].map(s => { const w = new THREE.Group(); w.position.set(.45 * s, .35, -.2); const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(2.2 * s, .5); sh.lineTo(1.8 * s, -.4); sh.lineTo(1.1 * s, -.2); sh.lineTo(.6 * s, -.6); sh.closePath(); const m = mesh(new THREE.ShapeGeometry(sh), smooth(0x81c784, { side: THREE.DoubleSide })); m.rotation.x = -Math.PI / 2; w.add(m); g.add(w); return w; });
+    g.userData.wings = wings; g.userData.fire = true; g.userData.seat = .55; g.userData.pose = 'sit';
+  } else if (kind === 'ufo') {
+    g.add(sph(1.3, smooth(0xb0bec5), 0, 0, 0, 1, .28, 1, 24));
+    g.add(sph(.7, smooth(0x80deea, { transparent: true, opacity: .55 }), 0, .25, 0, 1, .8, 1, 20));
+    const lights = []; for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2, l = sph(.1, basic([0xff5252, 0xffd23f, 0x69f0ae, 0x40c4ff][i % 4]), Math.cos(a) * 1.15, -.05, Math.sin(a) * 1.15); g.add(l); lights.push(l); }
+    const beam = mesh(new THREE.ConeGeometry(1.2, 3.5, 20, 1, true), basic(0xb2ff59, { transparent: true, opacity: .18, depthWrite: false, side: THREE.DoubleSide }), 0, -1.9, 0); g.add(beam);
+    g.userData.lights = lights; g.userData.beam = beam; g.userData.seat = .05; g.userData.pose = 'sit';
+  } else if (kind === 'hali') {
+    const t = canvasTex(128, 192, (x, w, h) => { x.fillStyle = '#b71c1c'; x.fillRect(0, 0, w, h); x.strokeStyle = '#ffd23f'; x.lineWidth = 8; x.strokeRect(8, 8, w - 16, h - 16); x.fillStyle = '#1565c0'; for (let i = 0; i < 3; i++) { x.beginPath(); x.moveTo(w / 2, 40 + i * 50); x.lineTo(w / 2 + 26, 60 + i * 50); x.lineTo(w / 2, 80 + i * 50); x.lineTo(w / 2 - 26, 60 + i * 50); x.closePath(); x.fill(); } x.fillStyle = '#ffd23f'; for (let i = 0; i < 12; i++) x.fillRect(20 + (i % 2) * 70, 20 + i * 13, 10, 6); });
+    const rug = mesh(new THREE.PlaneGeometry(1.6, 2.6, 8, 10), new THREE.MeshLambertMaterial({ map: t, side: THREE.DoubleSide })); rug.rotation.x = -Math.PI / 2; g.add(rug);
+    for (let i = 0; i < 6; i++) [-1, 1].forEach(e => g.add(mesh(geo('tass', () => new THREE.CylinderGeometry(.03, .05, .25, 5)), smooth(0xffd23f), -.65 + i * .26, -.1, e * 1.35)));
+    g.userData.rug = rug; g.userData.seat = .08; g.userData.pose = 'sit';
+  } else if (kind === 'balon') {
+    const t = canvasTex(256, 128, (x, w, h) => { const c = ['#e53935', '#ffd23f', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa']; for (let i = 0; i < 12; i++) { x.fillStyle = c[i % 6]; x.fillRect(i * w / 12, 0, w / 12 + 1, h); } });
+    const bal = mesh(new THREE.SphereGeometry(1.6, 24, 16), new THREE.MeshLambertMaterial({ map: t }), 0, 3.3, 0); bal.scale.y = 1.15; g.add(bal);
+    const bot = mesh(new THREE.ConeGeometry(.9, 1.2, 16, 1, true), new THREE.MeshLambertMaterial({ map: t, side: THREE.DoubleSide }), 0, 1.6, 0); bot.rotation.x = Math.PI; g.add(bot);
+    g.add(mesh(new THREE.CylinderGeometry(.6, .5, .6, 12), mat(0x8d5524), 0, .1, 0));
+    [[-.45, -.45], [.45, -.45], [-.45, .45], [.45, .45]].forEach(([x, z]) => g.add(mesh(geo('brope', () => new THREE.CylinderGeometry(.02, .02, 1.3, 4)), mat(0x5d4037), x, .9, z)));
+    const fl = mesh(new THREE.ConeGeometry(.15, .45, 8), basic(0xffa726, { transparent: true, opacity: .9 }), 0, 1.05, 0); g.add(fl);
+    g.userData.flames = [fl]; g.userData.balloon = bal; g.userData.seat = .15; g.userData.pose = 'sit';
+  } else if (kind === 'yunus') {
+    const bl = smooth(0x4fa3e0), wh = smooth(0xe3f2fd);
+    const body = mesh(new THREE.CapsuleGeometry(.5, 1.6, 6, 14), bl); body.rotation.x = Math.PI / 2; g.add(body);
+    g.add(sph(.42, wh, 0, -.2, -.2, 1, .6, 1.8, 12));
+    const nose = mesh(new THREE.ConeGeometry(.22, .6, 10), bl, 0, -.05, -1.5); nose.rotation.x = -Math.PI / 2; g.add(nose);
+    [-1, 1].forEach(s => { g.add(sph(.09, basic(0x111111), .32 * s, .15, -1)); const f = mesh(geo('dfin', () => new THREE.BoxGeometry(.6, .06, .3)), bl, .55 * s, -.2, -.3); f.rotation.z = -.4 * s; g.add(f); });
+    const df = mesh(new THREE.ConeGeometry(.25, .55, 4), bl, 0, .55, .2); df.rotation.x = .4; g.add(df);
+    g.add(mesh(new THREE.BoxGeometry(1, .06, .35), bl, 0, 0, 1.35));
+    g.userData.seat = .48; g.userData.pose = 'sit';
   }
   return shadowAll(g);
 }
@@ -1344,9 +1413,13 @@ function playAct(root, names, fade = .18, once = false, ts = 1) {
 }
 const BEAST_MODEL = { aslan: 'boga', kaplan: 'kurt', jaguar: 'kurt', fil: 'boga', gergedan: 'boga', ayi: 'kurt', kutupayisi: 'kurt', zebra: 'at', deve: 'alpaka', koyun: 'inek', penguen: 'geyik', timsah: 'kurt' };
 const BEAST_NAME = { kurt: 'Kurt sürüsü', boga: 'Kızgın boğa', at: 'Vahşi atlar', geyik: 'Geyikler', inek: 'İnekler', alpaka: 'Alpakalar' };
+const BPOOL = {};
+function poolPut(o) { const k = o.userData.poolKey; if (!k) return; const keep = { mixer: o.userData.mixer, acts: o.userData.acts, model: o.userData.model, inner: o.userData.inner, isModel: true, poolKey: k }; o.userData = keep; o.position.set(0, 0, 0); o.rotation.set(0, 0, 0); o.visible = true; (BPOOL[k] || (BPOOL[k] = [])).length < 8 && BPOOL[k].push(o); }
 function makeBeast(kind, scale = 1) {
   const mk = MODELS[kind] ? kind : BEAST_MODEL[kind];
-  const m = mk ? makeModel(mk, scale) : null;
+  const pk = mk ? mk + '_' + scale : null;
+  if (pk && BPOOL[pk] && BPOOL[pk].length) { const o = BPOOL[pk].pop(); o.userData.cur = null; o.userData.curAct = null; Object.values(o.userData.acts || {}).forEach(a => a.stop()); playAct(o, ['Gallop', 'Run', 'Walk']); return o; }
+  const m = mk ? makeModel(mk, scale) : null; if (m) m.userData.poolKey = pk;
   if (m) { playAct(m, ['Gallop', 'Run', 'Walk']); m.userData.isModel = true; return m; }
   const fb = BEAST[kind] ? kind : 'zebra'; const o = buildBeast(fb, scale); return o;
 }
@@ -1626,11 +1699,12 @@ function resetRun() {
     speed: 0, runTime: 0, riding: null, rideT: 0, chase: null, junction: null, question: null,
     roadEnd: 14, blocked: false, segCount: 0, sinceJunction: 0, nextJunction: 210, junctionCount: 0, pendingBiome: false, noContent: false,
     pickupT: 24, chaseT: rnd(30, 38), heartT: 40, lightningT: 3, herdT: rnd(8, 14), chargerT: rnd(20, 28), turnAnim: null,
-    underwater: false, space: false, boatWater: false, cave: false, swimming: false, swamOnce: false, kiteCD: rnd(16, 24), swimCD: rnd(12, 20), kite: null, kiteFall: false, ts: 1, tsTarget: 1, ambushT: rnd(14, 20), rockT: rnd(10, 15), mineCD: rnd(28, 40), bolum: 1, abil: 0, abilT: 0, abilKind: null, abilPhase: 0, dbl: false, bendT: 3, bendTarget: new THREE.Vector2(0, 0), tunnelLeft: 0, tunnelFirst: false, tunnelSeg: false, inTunnel: false, resLane: -1, resSegs: 0, fpsStart: 0, fpsN: 0, fpsChecked: false, biomeSwapT: 0, decorQ: [], stunT: 0, zone: null, zoneLeft: 0, zoneKind: null, zoneFirst: false, landing: false, rigY: 0, noTunnel: 0, camEvent: null, shake: 0, flashT: 0, unlockedRun: [], t: 0
+    underwater: false, space: false, boatWater: false, cave: false, swimming: false, swamOnce: false, kiteCD: rnd(16, 24), swimCD: rnd(12, 20), kite: null, kiteFall: false, ts: 1, tsTarget: 1, ambushT: rnd(14, 20), rockT: rnd(10, 15), mineCD: rnd(28, 40), bolum: 1, abil: 0, abilT: 0, abilKind: null, abilPhase: 0, dbl: false, bendT: 3, bendTarget: new THREE.Vector2(0, 0), tunnelLeft: 0, tunnelFirst: false, tunnelSeg: false, inTunnel: false, resLane: -1, resSegs: 0, fpsStart: 0, fpsN: 0, fpsChecked: false, biomeSwapT: 0, decorQ: [], popQ: [], stunT: 0, zone: null, zoneLeft: 0, zoneKind: null, zoneFirst: false, landing: false, rigY: 0, noTunnel: 0, camEvent: null, shake: 0, flashT: 0, unlockedRun: [], t: 0
   });
 }
 const ADULT = () => G.mode === 'yetiskin';
-const difficulty = () => clamp(G.runTime / (ADULT() ? 110 : 210), 0, 1);
+const tier = () => clamp((curLevel() - 1) / 12, 0, 1) * .6 + clamp((G.bolum - 1) / 8, 0, 1) * .4;   // v14: oyuncu ilerledikçe artan zorluk (0..1)
+const difficulty = () => clamp(G.runTime / (ADULT() ? 110 : 210) + tier() * .35, 0, 1);
 const dens = () => ADULT() ? 1.45 : ({ kolay: .72, orta: 1, zor: 1.22 }[P.diff] || 1);
 const abilNeed = () => ADULT() ? 40 : ABIL_NEED;
 
@@ -1790,7 +1864,7 @@ function addPickup(lane, z, kind) {
   const g = new THREE.Group(); g.userData = { type: 'pickup', kind };
   g.add(mesh(geo('pkb', () => new THREE.SphereGeometry(1, 20, 14)), basic(0x9be7ff, { transparent: true, opacity: .28, depthWrite: false })));
   const r = mesh(geo('pkr', () => new THREE.TorusGeometry(1.05, .06, 6, 30)), basic(0xffd23f)); r.rotation.x = Math.PI / 2; g.add(r); g.userData.ring = r;
-  const v = buildVehicle(kind); v.scale.setScalar(kind === 'roket' || kind === 'tekne' ? .42 : .48); v.rotation.y = .6; g.add(v); g.userData.v = v;
+  const v = buildVehicle(kind); v.scale.setScalar(kind === 'balon' ? .28 : kind === 'roket' || kind === 'tekne' || kind === 'ejderha' ? .42 : .48); v.rotation.y = .6; g.add(v); g.userData.v = v;
   g.position.set(LANE_X[lane], 1.3, z); world.add(g);
 }
 const PW_TEX = {};
@@ -1801,6 +1875,8 @@ function addPowerUp(lane, z, kind) {
   g.position.set(LANE_X[lane], 1.3, z); g.userData = { type: 'pw', kind }; world.add(g);
 }
 function hudPw() { const b = $('pwBadge'), a = Object.keys(G.pw).filter(k => G.pw[k] > 0); b.classList.toggle('hidden', !a.length); if (a.length) b.textContent = a.map(k => itemById('power', k).icon + ' ' + Math.ceil(G.pw[k])).join('  '); }
+const STAR_PROTO = (() => { const g = new THREE.Group(); const sh = new THREE.Shape(); for (let i = 0; i < 10; i++) { const r = i % 2 ? .18 : .42, a = i / 10 * Math.PI * 2 + Math.PI / 2; i ? sh.lineTo(Math.cos(a) * r, Math.sin(a) * r) : sh.moveTo(Math.cos(a) * r, Math.sin(a) * r); } g.add(new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: .12, bevelEnabled: false }), new THREE.MeshLambertMaterial({ color: 0xffd23f, emissive: 0x664400 }))); return g; })();
+function addStarLine(lane, z, n, y) { for (let i = 0; i < n; i++) { const o = STAR_PROTO.clone(); o.position.set(LANE_X[lane], y, z - i * 1.9); o.userData = { type: 'gstar' }; world.add(o); } }
 function addSpecial(type, lane, z) { const o = type === 'gem' ? buildGem() : buildHeartItem(); o.position.set(LANE_X[lane], 1.2, z); o.userData = { type }; world.add(o); }
 function addRing(lane, z, y) { const r = buildRing(); r.position.set(LANE_X[lane], y, z); r.userData = { type: 'ring' }; world.add(r); }
 function pickupKind() { const L = curLevel(), un = ITEMS.vehicle.filter(v => v.lv <= L).map(v => v.id); return Math.random() < .6 ? P.vehicle : pick(un); }
@@ -1808,7 +1884,7 @@ function populateSeg(zc) {
   const D = difficulty();
   if (G.riding) {
     const r = RIDE[G.riding];
-    if (r.y > 2) { const l = rndi(0, 2); if (G.riding === 'jet' || G.riding === 'roket') addRing(l, zc, r.y + .6); addFoodLine(rndi(0, 2), zc + 6, 5, r.y + .9); }
+    if (r.y > 2) { const l = rndi(0, 2); if (FLYING[G.riding]) addRing(l, zc, r.y + .6); addFoodLine(rndi(0, 2), zc + 6, 5, r.y + .9); }
     else if (G.riding === 'vagon') { addFoodZig(zc + 8); if (Math.random() < .7) addSpecial('gem', rndi(0, 2), zc - 3); if (Math.random() < .4) addSpecial('gem', rndi(0, 2), zc - 8); }
     else { addFoodZig(zc + 8); if (G.riding === 'kaykay' && Math.random() < .6) addObstacle(pick(['log', 'wall']), rndi(0, 2), zc - 4); }
     return;
@@ -1820,17 +1896,17 @@ function populateSeg(zc) {
   }
   if (G.abilKind) {
     if (isDash()) { addFoodZig(zc + 8); if (Math.random() < .7) addObstacle(pick(['log', 'wall', 'arch']), rndi(0, 2), zc - 4); }
-    else { const at = abType(G.abilKind), y = at === 'kite' ? 7.6 : at === 'hop' ? 3.4 : at === 'frog' ? 4.2 : at === 'leap' ? 4.4 : 4.8; if (G.abilKind === 'kite' && Math.random() < .5) addRing(rndi(0, 2), zc, 7.4); for (let l = 0; l < 3; l++) if (Math.random() < .6) addFoodLine(l, zc + 6, 5, y + rnd(-.3, .5)); if (G.abilKind === 'kedi') for (let k = 0; k < 3; k++) addTreetop(rndi(0, 2), zc + 8 - k * 7); }
+    else { const at = abType(G.abilKind), y = at === 'kite' ? 7.6 : at === 'hop' ? 3.4 : at === 'frog' ? 4.2 : at === 'leap' ? 4.4 : 4.8; if (G.abilKind === 'kite' && Math.random() < .5) addRing(rndi(0, 2), zc, 7.4); for (let l = 0; l < 3; l++) if (Math.random() < .6) { if (G.abilKind !== 'kite' && Math.random() < .55) addStarLine(l, zc + 6, 4, y + rnd(-.2, .4)); else addFoodLine(l, zc + 6, 5, y + rnd(-.3, .5)); } if (G.abilKind === 'kedi') for (let k = 0; k < 3; k++) addTreetop(rndi(0, 2), zc + 8 - k * 7); }
     return;
   }
   if (!G.tunnelSeg && !G.zone && G.zoneLeft <= 0 && G.mineCD <= 0 && G.runTime > 20 && Math.random() < .35 && G.nextJunction - G.sinceJunction > 130) { addMine(zc); G.mineCD = rnd(60, 85); G.noTunnel = 4; return; }
   G.resSegs = Math.max(0, G.resSegs - 1);
   const bk = biome().key, far = G.nextJunction - G.sinceJunction;
   if (!G.tunnelSeg && G.resSegs === 0 && G.runTime > 15 && G.kiteCD <= 0 && far > 100 && Math.random() < .3) { const l = rndi(0, 2); addSpring(l, zc); addFoodLine(l, zc + 9, 3); G.kiteCD = rnd(40, 55); G.noTunnel = 4; return; }
-  if (!G.tunnelSeg && G.resSegs === 0 && bk !== 'volkan' && bk !== 'kutup' && G.runTime > 10 && G.swimCD <= 0 && far > 60 && Math.random() < .3) { addSwim(zc); G.swimCD = rnd(30, 45); return; }
-  if (bk === 'volkan' && !G.tunnelSeg && G.resSegs === 0 && G.runTime > 6 && far > 40 && Math.random() < .22) { addLavaRiver(zc); addFoodArc(rndi(0, 2), zc + 4.2); return; }
-  if (!G.tunnelSeg && G.runTime > 12 && Math.random() < .14 * dens()) { let pl = rndi(0, 2); if (G.resSegs > 0 && pl === G.resLane) pl = (pl + 1) % 3; addPit(pl, zc - 6); }
-  if (!G.tunnelSeg && G.runTime > 8 && G.resSegs === 0 && Math.random() < .14 && G.nextJunction - G.sinceJunction > 60) { const pl = rndi(0, 2); addPlatform(pl, zc); G.resLane = pl; G.resSegs = 2; }
+  if (!G.tunnelSeg && G.resSegs === 0 && bk !== 'volkan' && bk !== 'kutup' && G.runTime > 10 && G.swimCD <= 0 && far > 60 && Math.random() < .3) { addSwim(zc); G.swimCD = rnd(30, 45); G.noTunnel = Math.max(G.noTunnel || 0, 3); return; }
+  if (bk === 'volkan' && !G.tunnelSeg && G.resSegs === 0 && G.runTime > 6 && far > 40 && Math.random() < .22) { addLavaRiver(zc); addFoodArc(rndi(0, 2), zc + 4.2); G.noTunnel = Math.max(G.noTunnel || 0, 2); return; }
+  if (!G.tunnelSeg && G.runTime > 12 && Math.random() < .14 * dens()) { let pl = rndi(0, 2); if (G.resSegs > 0 && pl === G.resLane) pl = (pl + 1) % 3; addPit(pl, zc - 6); G.noTunnel = Math.max(G.noTunnel || 0, 2); }
+  if (!G.tunnelSeg && G.runTime > 8 && G.resSegs === 0 && Math.random() < .14 && G.nextJunction - G.sinceJunction > 60) { const pl = rndi(0, 2); addPlatform(pl, zc); G.resLane = pl; G.resSegs = 2; G.noTunnel = Math.max(G.noTunnel || 0, 3); }
   if (G.powerT <= 0 && !G.tunnelSeg) { G.powerT = rnd(75, 110); const av = ITEMS.power.filter(i => owns('power', i.id) && P[i.id] && curLevel() >= i.lv).map(i => i.id); if (av.length) { addPowerUp(rndi(0, 2), zc, pick(av)); return; } }
   if (G.pickupT <= 0 && !G.tunnelSeg) { G.noTunnel = 5; addPickup(rndi(0, 2), zc, pickupKind()); G.pickupT = rnd(24, 32); addFoodLine(rndi(0, 2), zc + 6, 4); return; }
   if (G.hearts < 3 && G.heartT <= 0) { addSpecial('heart', rndi(0, 2), zc - 6); G.heartT = ADULT() ? rnd(80, 110) : rnd(45, 65); }
@@ -1863,13 +1939,14 @@ function addCharger() {
   const kind = biome().charger, lane = rndi(0, 2);
   const o = makeBeast(kind, kind === 'boga' ? 1.05 : 1.15);
   o.position.set(LANE_X[lane], 0, -120);
-  Object.assign(o.userData, { type: 'charger', vel: 8 + difficulty() * 4, kind, warned: false });
+  const L = curLevel(), mr = ADULT() ? (G.bolum >= 2 || L >= 4 ? 2 : 1) : (L >= 8 || G.bolum >= 5 ? 2 : L >= 4 || G.bolum >= 3 ? 1 : 0);
+  Object.assign(o.userData, { type: 'charger', vel: 8 + difficulty() * 4, kind, warned: false, maxRe: mr, re: 0, nextZ: -34 });
   if (!o.userData.isModel) o.rotation.y = Math.PI;
   world.add(o);
 }
 function addHerd() {
   const kind = biome().herd, dir = Math.random() < .5 ? 1 : -1, z = -70 - rnd(0, 10);
-  for (let i = 0; i < rndi(3, 5); i++) { const o = makeBeast(kind, .95); o.rotation.y = (o.userData.isModel ? 1 : -1) * dir * Math.PI / 2; o.position.set(-dir * (16 + i * 2.6 + rnd(0, 1)), 0, z + rnd(-3, 3)); Object.assign(o.userData, { type: 'herd', vx: dir * 15, kind }); o.traverse(c => c.castShadow = false); world.add(o); }
+  for (let i = 0, n = rndi(2, 4); i < n; i++) { const o = makeBeast(kind, .95); o.rotation.y = (o.userData.isModel ? 1 : -1) * dir * Math.PI / 2; o.position.set(-dir * (16 + i * 2.6 + rnd(0, 1)), 0, z + rnd(-3, 3)); Object.assign(o.userData, { type: 'herd', vx: dir * 15, kind }); o.traverse(c => c.castShadow = false); world.add(o); }
 }
 function growl() { Audio.tone(110, .7, 'sawtooth', .16, 0, -40); Audio.noise('lowpass', 300, .2, .7, 0, 1); }
 function howl() { Audio.tone(380, .5, 'sine', .14, 0, 320); Audio.tone(700, 1, 'sine', .12, .45, -250); }
@@ -1977,7 +2054,8 @@ function randomWeather(b) { return Math.random() < .35 ? 'sunny' : pick(b.weathe
    ===================================================================== */
 const heartSVG = on => `<svg viewBox="0 0 32 30"><path d="M16 29 C5 20 1 14 1 9 A7.5 7.5 0 0 1 16 5.5 A7.5 7.5 0 0 1 31 9 C31 14 27 20 16 29Z" fill="${on ? '#ff3d5e' : 'rgba(255,255,255,.3)'}" stroke="${on ? '#9e1030' : 'rgba(0,0,0,.25)'}" stroke-width="2"/><ellipse cx="9" cy="10" rx="3" ry="2" fill="${on ? 'rgba(255,255,255,.6)' : 'none'}"/></svg>`;
 function hudHearts() { $('hearts').innerHTML = [0, 1, 2].map(i => heartSVG(i < G.hearts)).join(''); }
-function hudAll() {
+function hudBolum() { const k = G.correct % 3; $('bolum').innerHTML = 'Bölüm ' + G.bolum + ' <span style="letter-spacing:1px;color:#ffd23f">' + '●'.repeat(k) + '<span style="opacity:.35">' + '●'.repeat(3 - k) + '</span></span>'; }
+function hudAll() { hudBolum();
   hudHearts();
   $('foodIcon').textContent = foodOf().icon; $('foodCount').textContent = G.food;
   const xp = P.xp, L = levelOf(xp);
@@ -2099,7 +2177,7 @@ function doTurn(dir, secretHit) {
   G.lane = 1; G.px = 0; playerRoot.position.x = 0; camPos.x -= px0; camLook.x -= px0; camera.position.x -= px0;
   parts.forEach(p => p.position.x -= px0); leaving.forEach(v => v.position.x -= px0);
   if (G.pendingBiome) { G.pendingBiome = false; G.biomeSwapT = .55; }
-  chosen.forEach(o => { if (o.position.z < -14) { if (secretHit) { addFoodLine(0, o.position.z + 8, 6); addFoodLine(1, o.position.z + 8, 6); addFoodLine(2, o.position.z + 8, 6); if (Math.random() < .5) addSpecial('gem', rndi(0, 2), o.position.z - 2); } else populateSeg(o.position.z); } });
+  chosen.forEach(o => { if (o.position.z < -14) { if (!secretHit) { (G.popQ || (G.popQ = [])).push(o); return; } if (secretHit) { addFoodLine(0, o.position.z + 8, 6); addFoodLine(1, o.position.z + 8, 6); addFoodLine(2, o.position.z + 8, 6); if (Math.random() < .5) addSpecial('gem', rndi(0, 2), o.position.z - 2); } else populateSeg(o.position.z); } });
   if (secretHit) { banner('GİZLİ YOL! 💎', 'gold', 1800); Audio.gem(); }
   G.camEvent = { type: 'turn', t: 0, dur: .6, dir };
 }
@@ -2110,7 +2188,7 @@ function changeBiome() {
   const na = BIOME_ANIMAL[b.key] || G.animal; if (na !== G.animal) { if (G.abilKind && G.abilKind !== 'kite') endAbility(); G.animal = na; const ry = rig ? rig.g.position.y : 0; setAnimal(na); rig.g.position.y = ry; burst(playerRoot.position.clone().add(new V3(0, 1, 0)), 40, [0xffffff, 0xffd23f, 0xff6f91, 0x5fb8ff], 6, 1); }
   setBiome(n, { weather: randomWeather(b), tod: Math.random() < .5 ? randomTod() : G.tod });
   regenDecor();
-  G.bolum++; $('bolum').textContent = 'Bölüm ' + G.bolum; P.checkpoint = { bolum: G.bolum, biomeIdx: n, stage: G.stage }; Store.save();
+  G.bolum++; hudBolum(); fxPop(playerRoot.position.clone().add(new V3(0, 2, -2)), true); P.checkpoint = { bolum: G.bolum, biomeIdx: n, stage: G.stage }; Store.save();
   G.shields = Math.max(G.shields, owns('armor', P.armor) ? itemById('armor', P.armor).refill : 0); hudAll();
   setTimeout(() => banner(`Bölüm ${G.bolum}<small>${b.flag} ${b.name} • ${itemById('animal', G.animal).icon} ${itemById('animal', G.animal).name}</small>`, 'gold', 2600), 200);
   G.camEvent = { type: 'pano', t: 0, dur: 2.6 };
@@ -2122,8 +2200,8 @@ function onCorrect() {
   addXp(20);
   G.streak++; G.wrongStreak = 0;
   const ns = fixStage(G.stage + 1); if (P.auto && G.streak >= 4 && ns > G.stage) { G.stage = ns; G.streak = 0; setTimeout(() => { if (G.state === 'play') { banner(`Yeni işlem açıldı!<small>${STAGES[G.stage].name}</small>`, 'gold', 2600); Audio.stageUp(); } }, 1900); }
-  const c = G.correct;
-  if (c % 3 === 0) G.pendingBiome = true;
+  const c = G.correct; hudBolum(); if (c % 3) setTimeout(() => { if (G.state === 'play') hint((3 - c % 3) + ' doğru daha: yeni harita ve yeni hayvan!', 1800); }, 1500);
+  if (c % 3 === 0) { G.pendingBiome = true; setTimeout(() => { if (G.state === 'play') banner('Harita tamam! 🗺️<small>Yeni haritaya geçiyorsun...</small>', 'gold', 1500); }, 1700); }
   else if (c % 3 === 2) setTimeout(() => { if (G.state !== 'play' || G.underwater || G.space) return; const b = biome(); setWeather(pick(b.weathers.filter(w => w !== G.weather))); }, 1200);
   else setTimeout(() => { if (G.state === 'play' && !G.riding && !G.chase) addHerd(); }, 900);
 }
@@ -2134,11 +2212,16 @@ function onWrong(silent) {
 
 /* ---- hayvan yetenekleri ---- */
 const ABIL_NEED = 25, ABIL_DUR = 6.5;
+const ABIL_GOAL = { hop: 'Havadaki altın yıldızları topla! ⭐', leap: 'Havadaki altın yıldızları topla! ⭐', frog: 'Yüksekteki yıldızlara zıpla! ⭐', glide: 'Süzülerek yıldızları topla! ⭐', dash: 'Önüne çıkan her şeyi parçala! 💥' };
 function addAbil(n) { if (G.abilKind || G.state !== 'play') return; G.abil = Math.min(abilNeed(), G.abil + n * (RA() === 'at' ? 1.4 : 1)); $('abFill').style.width = (100 * G.abil / abilNeed()) + '%'; $('abil').classList.toggle('full', G.abil >= abilNeed()); }
-function tryAbility() { if (G.abil >= abilNeed() && !G.abilKind && !G.riding && !G.chase && !G.landing && !tunnelNear(-45, 14) && !(G.junction && !G.junction.resolved && G.junction.obj.position.z > -70)) startAbility(); }
+function abilReady() { return G.abil >= abilNeed() && !G.abilKind && !G.riding && !G.chase && !G.landing && !tunnelNear(-45, 14) && !G.zone && !(G.junction && !G.junction.resolved && G.junction.obj.position.z > -70); }
+function abilUI() { const full = G.state === 'play' && G.abil >= abilNeed() && !G.abilKind; $('abBtn').classList.toggle('hidden', !full); if (full) $('abBtnIc').textContent = itemById('animal', RA()).icon; }
+function useAbility() { if (G.state !== 'play') return; if (abilReady()) { startAbility(); abilUI(); } else if (G.abil >= abilNeed()) { Audio.lane(); hint('Biraz bekle, şimdi olmaz!', 1200); } }
+function tryAbility() { abilUI(); if (G.abil >= abilNeed() && !G.abilFullT) { G.abilFullT = G.t; if ((P.abilHints || 0) < 3) { P.abilHints = (P.abilHints || 0) + 1; hint(itemById('animal', RA()).icon + ' Yetenek doldu! Sağdaki düğmeye dokun', 3000); } } if (G.abil < abilNeed()) G.abilFullT = 0; if (G.abilFullT && G.t - G.abilFullT > 12 && abilReady()) startAbility(); }
+function _oldTryAbility() { if (G.abil >= abilNeed() && !G.abilKind && !G.riding && !G.chase && !G.landing && !tunnelNear(-45, 14) && !(G.junction && !G.junction.resolved && G.junction.obj.position.z > -70)) startAbility(); }
 function startAbility() {
-  G.abilKind = RA(); G.abilT = ABIL_DUR; G.abil = 0; G.abilPhase = 0; G.abilHop = -1; $('abFill').style.width = '0%'; $('abil').classList.remove('full'); G.slideT = 0;
-  banner(itemById('animal', RA()).ability, 'gold', 1800); Audio.pickup();
+  G.abilFullT = 0; G.abilKind = RA(); G.abilT = ABIL_DUR; G.abil = 0; G.abilPhase = 0; G.abilHop = -1; $('abFill').style.width = '0%'; $('abil').classList.remove('full'); G.slideT = 0;
+  banner(itemById('animal', RA()).ability + '<small>' + (ABIL_GOAL[abType(RA())] || '') + '</small>', 'gold', 2200); Audio.pickup(); fxPop(playerRoot.position.clone().add(new V3(0, 1.5, -1)), false);
   world.children.slice().forEach(o => { if (o.userData.type === 'obst' && o.position.z > -30 && !isDash()) world.remove(o); });
   if (!isDash()) clearTunnelsAhead(-45);
   if (isDash()) { Audio.roar(true); G.camEvent = { type: 'punch', t: 0, dur: .6 }; }
@@ -2156,13 +2239,20 @@ function abilityMotion(dt) {
 }
 
 /* ---- araç gezisi ---- */
+const FLYING = { jet: 1, roket: 1, kartal: 1, hali: 1, ufo: 1, balon: 1, ejderha: 1 };
 const RIDE = {
   jet: { y: 5.5, speed: 1.55, dur: 10, cam: [0, 3.2, 9], banner: 'Jete atla! Halkalardan geç!' },
   kaykay: { y: 0, speed: 1.75, dur: 9, cam: [0, 3.2, 8], banner: 'Roket kaykay! Engelleri parçala!' },
   tekne: { y: 0, speed: 1.5, dur: 10, cam: [0, 3.6, 9], banner: 'Yol nehre döndü! Tekneye atla!' },
   denizalti: { y: 1.4, speed: 1.25, dur: 11, cam: [0, 2.8, 8], banner: 'Su altına dal!' },
   roket: { y: 13, speed: 2.3, dur: 9, cam: [0, 4.2, 11], banner: 'Roketle uzaya!' },
-  vagon: { y: 0, speed: 1.35, dur: 16, cam: [0, 2.7, 7], banner: 'Madene girdin! Kristalleri topla!' }
+  vagon: { y: 0, speed: 1.35, dur: 16, cam: [0, 2.7, 7], banner: 'Madene girdin! Kristalleri topla!' },
+  kartal: { y: 6, speed: 1.45, dur: 10, cam: [0, 3.4, 9], banner: 'Kartalın sırtında uç! 🦅' },
+  hali: { y: 3.6, speed: 1.4, dur: 10, cam: [0, 3.2, 8.5], banner: 'Sihirli halıya bin! 🧞' },
+  ufo: { y: 5, speed: 1.6, dur: 10, cam: [0, 3.6, 9.5], banner: 'Uzay gemisi! 🛸' },
+  yunus: { y: 0, speed: 1.5, dur: 10, cam: [0, 3.4, 8.5], banner: 'Yol nehir oldu! Yunusa atla! 🐬' },
+  balon: { y: 8, speed: 1.15, dur: 11, cam: [0, 4.4, 10.5], banner: 'Balonla gökyüzüne! 🎈' },
+  ejderha: { y: 6.5, speed: 1.7, dur: 10, cam: [0, 3.8, 10], banner: 'Ejderhaya bin! Ateş püskürt! 🐉' }
 };
 function clearTunnelsAhead(z0 = -14) { G.tunnelLeft = 0; G.noTunnel = Math.max(G.noTunnel || 0, 3); world.children.slice().forEach(o => { if (o.userData.type === 'tunnel' && o.position.z < z0) world.remove(o); }); }
 function tunnelNear(a, b) { return world.children.some(o => o.userData.type === 'tunnel' && o.position.z > a && o.position.z < b); }
@@ -2172,7 +2262,7 @@ function startRide(kind) {
   if (G.abilKind) endAbility();
   G.riding = kind; G.rideT = RIDE[kind].dur; G.slideT = 0; G.landing = false; clearTunnelsAhead(G.inTunnel ? -24 : -12);
   if (G.junction && !G.junction.resolved) { showQuestion(null); G.question = null; }
-  clearAhead(kind === 'kaykay');
+  clearAhead(kind === 'kaykay'); if (kind === 'vagon' || FLYING[kind]) world.children.slice().forEach(o => { const t = o.userData.type; if ((t === 'plat' || t === 'spring' || t === 'pit' || t === 'swim' || t === 'lavaRiver') && o.position.z < 2) world.remove(o); });
   vehicleHolder.clear(); const v = buildVehicle(kind); vehicleHolder.add(v); v.position.set(0, 6, -6); v.userData.arrive = 0;
   Audio.whoosh(); Audio.pickup(); setTimeout(() => { if (G.riding === kind) Audio.startLoop(kind); }, 400);
   banner(RIDE[kind].banner, 'gold', 1800);
@@ -2181,8 +2271,8 @@ function startRide(kind) {
   G.camEvent = { type: 'pano', t: 0, dur: 1.4 };
   if (kind === 'denizalti') setTimeout(() => { if (G.riding !== 'denizalti') return; G.underwater = true; flash('#4fb3ff', .9, 600); Audio.splash(); refreshRoads(); regenDecor(); applySkyVisuals(); Audio.setAmbient(); }, 500);
   if (kind === 'roket') { G.space = true; applySkyVisuals(); Audio.setAmbient(); }
-  if (kind === 'tekne') { G.boatWater = true; flash('#9fdcff', .7, 500); Audio.splash(); refreshRoads(); }
-  if (kind === 'jet' || kind === 'roket') speedLines.visible = true;
+  if (kind === 'tekne' || kind === 'yunus') { G.boatWater = true; flash('#9fdcff', .7, 500); Audio.splash(); refreshRoads(); }
+  if (FLYING[kind]) speedLines.visible = true;
 }
 function endRide() {
   const kind = G.riding; if (!kind) return;
@@ -2381,7 +2471,7 @@ function updatePlay(dt) {
   // oyuncu
   const tx = LANE_X[G.lane]; G.px = lerp(G.px, tx, damp(13, dt)); playerRoot.position.x = G.px;
   if (G.riding) {
-    const r = RIDE[G.riding]; let ty = r.y + (r.y > 1 ? Math.sin(G.t * 2.5) * .25 : 0); if (G.riding === 'tekne') ty = Math.sin(G.t * 3) * .08;
+    const r = RIDE[G.riding]; let ty = r.y + (r.y > 1 ? Math.sin(G.t * 2.5) * .25 : 0); if (G.riding === 'tekne') ty = Math.sin(G.t * 3) * .08; if (G.riding === 'yunus') ty = Math.max(0, Math.sin(G.t * 2.2)) * 1.4;
     if (r.y <= 1) { const gh = groundAt().h; if (gh > ty) ty = gh + (G.riding === 'vagon' ? .05 : 0); }
     G.py = lerp(G.py, ty, damp(ty > G.py + .2 && r.y <= 1 ? 12 : 3, dt)); G.vy = 0; G.grounded = true;
   } else {
@@ -2413,8 +2503,15 @@ function updatePlay(dt) {
       if (v.userData.prop) v.userData.prop.rotation.z += dt * 18;
       if (v.userData.roll) { v.userData.roll = Math.max(0, v.userData.roll - dt * 9); v.rotation.z = v.userData.roll * v.userData.rollDir; }
       else v.rotation.z = tilt * 1.5;
-      v.rotation.x = G.riding === 'tekne' ? Math.sin(G.t * 3) * .04 : 0;
-      if (G.riding === 'tekne' && Math.random() < .5) burst(new V3(G.px, .1, 1.6), 1, [0xffffff, 0xd8f4ff], 2, .5, -4, .8);
+      v.rotation.x = G.riding === 'tekne' ? Math.sin(G.t * 3) * .04 : G.riding === 'yunus' ? -Math.cos(G.t * 2.2) * .35 : 0;
+      if (v.userData.wings) { const f = Math.sin(G.t * (G.riding === 'ejderha' ? 7 : 9)) * .55; v.userData.wings[0].rotation.z = f; v.userData.wings[1].rotation.z = -f; }
+      if (v.userData.lights) { v.userData.lights.forEach((l, i) => l.visible = Math.floor(G.t * 6 + i) % 2 === 0); if (v.userData.beam) v.userData.beam.material.opacity = .12 + Math.sin(G.t * 8) * .06; }
+      if (v.userData.rug) { const pa = v.userData.rug.geometry.attributes.position; for (let i = 0; i < pa.count; i++) pa.setZ(i, Math.sin(G.t * 6 + pa.getY(i) * 2.2) * .08); pa.needsUpdate = true; }
+      if (v.userData.glow) v.userData.glow.material.opacity = .3 + Math.sin(G.t * 10) * .15;
+      if (v.userData.flag) v.userData.flag.rotation.y = Math.sin(G.t * 9) * .4;
+      if (v.userData.balloon) v.rotation.z = Math.sin(G.t * 1.2) * .05;
+      if (v.userData.fire && Math.random() < .25) burst(new V3(G.px, G.py + 1.4, -2.6), 3, [0xff7043, 0xffd23f, 0xffffff], 4, .45, 2, 1.2);
+      if ((G.riding === 'tekne' || G.riding === 'yunus') && Math.random() < .5) burst(new V3(G.px, .1, 1.6), 1, [0xffffff, 0xd8f4ff], 2, .5, -4, .8);
       if (G.riding === 'kaykay' && Math.random() < .4) burst(new V3(G.px, .5, 1.9), 1, [0x4fc3f7, 0xffffff], 1.5, .3, 0, .7);
     }
     G.rideT -= dt; $('rideFill').style.width = (100 * G.rideT / RIDE[G.riding].dur) + '%';
@@ -2434,6 +2531,7 @@ function updatePlay(dt) {
 
   // dönüş animasyonu
   if (G.biomeSwapT > 0) { G.biomeSwapT -= dt; if (G.biomeSwapT <= 0) changeBiome(); }
+  if (G.popQ && G.popQ.length && !G.turnAnim) { const sg = G.popQ.shift(); if (sg.parent === world && sg.position.z < -10) populateSeg(sg.position.z); }
   if (G.decorQ && G.decorQ.length) { for (let k = 0; k < 2 && G.decorQ.length; k++) { const sg = G.decorQ.shift(); if (sg.parent === world && sg.position.z < 20) decorAlong(sg.position.z); } }
   if (G.turnAnim) { G.turnAnim.t += dt; const u = Math.min(1, G.turnAnim.t / .45); world.rotation.y = G.turnAnim.from * (1 - (u * u * (3 - 2 * u))); if (u >= 1) { world.rotation.y = 0; G.turnAnim = null; } }
 
@@ -2446,7 +2544,9 @@ function updatePlay(dt) {
     o.position.z += dz;
     if (u.vx || u.vz) { o.position.x += (u.vx || 0) * dt; o.position.z += (u.vz || 0) * dt; }
     if (u.mixer) u.mixer.update(dt);
-    if (u.type === 'charger') { o.position.z += u.vel * dt; animateBeast(o, G.t, 1.2); if (!u.warned && o.position.z > -55) { u.warned = true; if (u.kind === 'kurt') howl(); else Audio.roar(true); } }
+    if (u.type === 'charger') { o.position.z += u.vel * dt; animateBeast(o, G.t, 1.2); if (!u.warned && o.position.z > -55) { u.warned = true; if (u.kind === 'kurt') howl(); else Audio.roar(true); }
+      if (u.re < u.maxRe && o.position.z > u.nextZ) { u.nextZ += 13; if (Math.abs(o.position.x - LANE_X[G.lane]) > .6) { u.tx = LANE_X[G.lane]; u.re++; Audio.roar(false); const ex = new THREE.Sprite(new THREE.SpriteMaterial({ map: EXCL_TEX, depthWrite: false })); ex.scale.setScalar(1.2); ex.position.y = 3.4; o.add(ex); setTimeout(() => o.remove(ex), 700); if (u.re === 1) hint('⚠️ Seni takip ediyor! Tekrar kaç!', 1300); } }
+      if (u.tx !== undefined) { const d = u.tx - o.position.x, st = 7.5 * dt; o.position.x += Math.abs(d) < st ? d : Math.sign(d) * st; } }
     else if (u.type === 'ambush') {
       if (u.phase === 'wait' && o.position.z > -33) { u.phase = 'rustle'; Audio.noise('bandpass', 900, .3, .9, 0, .7); setTimeout(growl, 250); $('danger').classList.add('on'); setTimeout(() => $('danger').classList.remove('on'), 900); if (!ADULT()) hint(u.side < 0 ? '⚠️ Solda çalılar kıpırdıyor!' : '⚠️ Sağda çalılar kıpırdıyor!', 1600); }
       if (u.phase === 'rustle') { o.children.forEach((c, k) => { c.position.y = .8 + Math.sin(G.t * 40 + k) * .14; }); if (o.position.z > -19) { u.phase = 'leap'; spawnLeaper(u.side, o.position.z); } }
@@ -2467,6 +2567,7 @@ function updatePlay(dt) {
     else if (u.type === 'mine') { if (!u.trig && o.position.z > -1.5 && !G.riding && !G.chase && !G.zone) { u.trig = true; startRide('vagon'); } }
     else if (u.type === 'herd') animateBeast(o, G.t, 1.3);
     else if (u.type === 'food') { o.rotation.y += dt * 3; if (magnet && o.position.z > -7 && o.position.distanceTo(pc) < 6) o.position.lerp(pc, damp(8, dt)); }
+    else if (u.type === 'gstar') { o.rotation.y += dt * 4; }
     else if (u.type === 'pw') { o.position.y = 1.3 + Math.sin(G.t * 3) * .2; }
     else if (u.type === 'pickup') { u.v.rotation.y += dt * 2; u.ring.rotation.z += dt * 3; o.position.y = 1.3 + Math.sin(G.t * 3) * .2; }
     else if (u.type === 'gem' || u.type === 'heart') { o.rotation.y += dt * 2.5; o.position.y = 1.2 + Math.sin(G.t * 3) * .15; }
@@ -2482,7 +2583,7 @@ function updatePlay(dt) {
     else if (u.type === 'ravine') { if (u.collapse && u.fall < 1) { u.fall = Math.min(1, u.fall + dt * .9); u.planks.children.forEach((p, k) => { p.position.y = .2 - u.fall * u.fall * (6 + (k % 5)); p.rotation.x = u.fall * (k % 2 ? 2 : -2); }); } }
     else if (u.type === 'decor') { if (u.bat !== undefined) { o.position.x += Math.sin(G.t * 2 + u.bat) * .05; o.children.slice(1).forEach(w => w.rotation.z = Math.sin(G.t * 20) * .6 * Math.sign(w.position.x)); } if (u.bob) { if (u.by === undefined) u.by = o.position.y; o.position.y = u.by + Math.sin(G.t * 2 + u.phase) * (u.by !== 0 ? .3 : .05); } else if (u.sway) o.rotation.z = Math.sin(G.t * 1.5 + u.phase) * .15; else if (u.swim) o.position.z -= u.swim * dt; }
     const z = o.position.z, x = o.position.x;
-    if ((z > 24 && u.type !== 'ravine') || z > 75 || Math.abs(x) > 95 || z < -420) { if (u.dispose) o.traverse(c => { if (c.material && c.material.map && c.material.isMeshBasicMaterial) c.material.map.dispose(); }); world.remove(o); continue; }
+    if ((z > 24 && u.type !== 'ravine') || z > 75 || Math.abs(x) > 95 || z < -420) { if (u.poolKey && u.type === 'herd') { world.remove(o); poolPut(o); continue; } if (u.dispose) o.traverse(c => { if (c.material && c.material.map && c.material.isMeshBasicMaterial) c.material.map.dispose(); }); world.remove(o); continue; }
     if (Math.abs(z) < 2.6 && !G.turnAnim) checkHit(o, pc);
   }
   G.inTunnel = inT;
@@ -2554,6 +2655,8 @@ function checkHit(o, pc) {
       if (!u.got && Math.abs(z) < .9 && dx < 1.2 && Math.abs(o.position.y - (G.py + .6)) < 1.5) { u.got = true; Audio.ring(); G.bonus += 50; G.food += 3; addXp(3); burst(wpos(o), 16, [0xffd23f, 0xffffff], 4, .6, 0); fxRing(wpos(o), 0xfff3a0, 5); o.scale.setScalar(1.4); setTimeout(() => world.remove(o), 120); } return;
     case 'pickup':
       if (Math.abs(z) < 1.1 && dx < 1.1 && !G.riding && !G.chase) { burst(wpos(o), 30, [0x9be7ff, 0xffd23f, 0xffffff], 6, .9); world.remove(o); startRide(u.kind); } return;
+    case 'gstar':
+      if (Math.abs(z) < 1 && dx < 1.1 && Math.abs(o.position.y - pc.y) < 1.6) { world.remove(o); G.bonus += 30; P.coins = (P.coins || 0) + 2; addXp(2); Audio.ring(); fxRing(wpos(o), 0xfff3a0, 2.5); burst(wpos(o), 6, [0xffd23f, 0xffffff], 3, .4, -6); } return;
     case 'pw':
       if (Math.abs(z) < 1.1 && dx < 1.1) { world.remove(o); G.pw[u.kind] = 8; hudPw(); Audio.pickup(); burst(new V3(G.px, 1.2, 0), 24, [0xffe680, 0xffffff], 5, .6); banner(itemById('power', u.kind).icon + ' ' + itemById('power', u.kind).name + ' 8 sn!', 'gold', 1400); } return;
     case 'heart':
@@ -2564,6 +2667,7 @@ function checkHit(o, pc) {
 }
 /* ---- v12: başarı patlamaları (konfeti, parlayan halka, yıldızlar) ---- */
 const fx = [];
+const EXCL_TEX = canvasTex(128, 128, (x, w, h) => { x.fillStyle = '#ff3b30'; x.beginPath(); x.arc(64, 64, 56, 0, 7); x.fill(); x.strokeStyle = '#fff'; x.lineWidth = 8; x.stroke(); x.fillStyle = '#fff'; x.font = '900 90px Arial'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('!', 64, 70); });
 const STAR_TEX = canvasTex(128, 128, (x, w, h) => { x.translate(w / 2, h / 2); x.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 24 : 56, a = i / 10 * Math.PI * 2 - Math.PI / 2; x.lineTo(Math.cos(a) * r, Math.sin(a) * r); } x.closePath(); x.fillStyle = '#ffe066'; x.fill(); x.lineWidth = 7; x.strokeStyle = '#fff'; x.stroke(); });
 const RING_TEX = canvasTex(256, 256, (x, w, h) => { const g = x.createRadialGradient(128, 128, 60, 128, 128, 126); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(.7, 'rgba(255,255,255,.95)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, w, h); });
 function fxSprite(tex, col, pos, s0, s1, dur, v) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color: col, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false })); sp.position.copy(pos); sp.scale.setScalar(s0); sp.userData = { t: 0, dur, s0, s1, v: v || null, spin: rnd(-4, 4) }; scene.add(sp); fx.push(sp); return sp; }
@@ -2623,7 +2727,7 @@ function clearTransient() { G.zone = null; G.zoneLeft = 0; G.biomeSwapT = 0; G.d
 function updateIdle(dt) {
   G.t += dt; if (rig && rig.mixer) rig.mixer.update(dt); playerRoot.position.set(0, 0, 0); playerRoot.rotation.set(0, Math.PI, 0);
   const v = vehicleHolder.children[0];
-  if (G.state === 'garage' && v) { v.position.y = (v.userData.kind === 'kaykay' || v.userData.kind === 'tekne') ? 0 : 1 + Math.sin(G.t * 2) * .1; rig.g.position.y = v.position.y + v.userData.seat; pose(v.userData.pose, G.t); if (v.userData.flames) v.userData.flames.forEach(f => f.scale.y = rnd(.7, 1.3)); if (v.userData.prop) v.userData.prop.rotation.z += dt * 10; }
+  if (G.state === 'garage' && v) { v.position.y = (v.userData.kind === 'kaykay' || v.userData.kind === 'tekne' || v.userData.kind === 'yunus') ? 0 : v.userData.kind === 'balon' ? -.4 : 1 + Math.sin(G.t * 2) * .1; if (v.userData.wings) { const f = Math.sin(G.t * 8) * .5; v.userData.wings[0].rotation.z = f; v.userData.wings[1].rotation.z = -f; } rig.g.position.y = v.position.y + v.userData.seat; pose(v.userData.pose, G.t); if (v.userData.flames) v.userData.flames.forEach(f => f.scale.y = rnd(.7, 1.3)); if (v.userData.prop) v.userData.prop.rotation.z += dt * 10; }
   else { rig.g.position.y = 0; pose('wave', G.t); }
   rig.g.visible = true; blob.position.set(0, .03, 0); blob.scale.setScalar(1); blob.visible = !Store.d.set.hq;
   updateParts(dt); updateWeather(dt * 0);
@@ -2639,8 +2743,8 @@ function goProfiles(openNew) {
   G.state = 'profiles'; show('profiles'); renderProfiles(openNew);
   Device.back = () => { if (Store.p) goMenu(); else Device.exitApp(); };
 }
-const EMOJIS = ITEMS.animal.map(a => a.icon);
-let newEmoji = '🐰', delArm = null;
+const EMOJIS = ['⭐', '🌙', '☀️', '🚀', '⚽', '🎈', '🌈', '🍀', '🎨', '👑'];
+let newEmoji = '⭐', delArm = null;
 function renderProfiles(openNew) {
   const list = $('profList'); list.innerHTML = '';
   Store.d.profiles.forEach(p => {
@@ -2656,21 +2760,21 @@ function renderProfiles(openNew) {
 function openNewProfile() {
   $('profNew').classList.remove('hidden'); $('profName').value = '';
   const em = $('profEmojis'); em.innerHTML = '';
-  ITEMS.animal.forEach(a => { const e = a.icon, b = document.createElement('button'); b.dataset.e = e; b.innerHTML = e + '<small>' + a.name + '</small>'; b.className = e === newEmoji ? 'on' : ''; b.onclick = () => { newEmoji = e; [...em.children].forEach(x => x.classList.toggle('on', x.dataset.e === e)); Audio.init(); Audio.lane(); setAnimal(a.id); $('profAbil').textContent = a.icon + ' ' + a.name + ': ' + a.desc; }; em.appendChild(b); });
-  $('profAbil').textContent = '';
+  EMOJIS.forEach(e => { const b = document.createElement('button'); b.dataset.e = e; b.textContent = e; b.className = e === newEmoji ? 'on' : ''; b.onclick = () => { newEmoji = e; [...em.children].forEach(x => x.classList.toggle('on', x.dataset.e === e)); Audio.init(); Audio.lane(); }; em.appendChild(b); });
+  $('profAbil').textContent = 'Hayvanlar haritalarla birlikte açılır 🗺️';
   $('profCancel').classList.toggle('hidden', !Store.d.profiles.length);
 }
 $('profSave').onclick = () => {
   Audio.init();
   const name = ($('profName').value || '').trim().slice(0, 12) || ('Oyuncu ' + (Store.d.profiles.length + 1));
-  const p = newProfile(name, newEmoji, { animal: animalOfIcon(newEmoji) || 'tavsan', diff: 'kolay', _animalSet: true });
+  const p = newProfile(name, newEmoji, { animal: 'tavsan', diff: 'kolay', _animalSet: true });
   ensureOwned(p); p._upd = Date.now(); Store.d.profiles.push(p); Store.d.cur = p.id; P = p; Store.save(); Cloud.pushProfile(p); setAnimal(P.animal); Audio.pickup(); goMenu();
 };
-$('profCancel').onclick = () => { $('profNew').classList.add('hidden'); if (P) setAnimal(P.animal); };
+$('profCancel').onclick = () => { $('profNew').classList.add('hidden'); };
 function goMenu() {
   if (!P) { goProfiles(true); return; }
   if (G.state === 'play' || G.state === 'paused' || G.state === 'over' || G.state === 'boot') { Audio.stopAll(); setupIdleScene(); }
-  G.state = 'menu'; G.animal = null; ensureOwned(P); vehicleHolder.clear(); setAnimal(P.animal);
+  G.state = 'menu'; G.animal = null; ensureOwned(P); vehicleHolder.clear();
   show('menu'); refreshMenu();
   Device.back = () => Device.exitApp();
 }
@@ -2681,6 +2785,10 @@ function refreshMenu() {
   $('mXp').style.width = (100 * (xp - xpFor(L)) / (xpFor(L + 1) - xpFor(L))) + '%';
   const nu = nextUnlock(L); $('mNext').textContent = nu ? `Sv ${nu.lv}: ${nu.list.map(x => x.item.icon + ' ' + x.item.name).join(', ')}` : 'Tüm ödüller açıldı!';
   $('mStats').textContent = `💰 ${P.coins || 0} altın • En iyi: ${P.best} • ${P.mode === 'yetiskin' ? '🧑 Yetişkin' : '🧒 ' + DIFF_NAME[P.diff]} • ${P.auto ? STAGES[fixStage(P.stage || 0)].name : Object.keys(P.ops).filter(k => P.ops[k]).map(k => OP_NAME[k]).join(', ')}`;
+  const L2 = levelOf(P.xp); $('mMaps').innerHTML = BIOMES.map(b => ({ b, lv: BIOME_LV[b.key] || 1 })).sort((a, c) => a.lv - c.lv).map(({ b, lv }) => { const a = itemById('animal', BIOME_ANIMAL[b.key]), open = lv <= L2; return `<div title="${b.name}" style="width:52px;padding:3px 0;border-radius:10px;text-align:center;font-size:18px;line-height:1.1;background:${open ? '#fff3c4' : 'rgba(0,0,0,.12)'};border:2px solid ${open ? '#e0a400' : 'transparent'}">${open ? b.flag + '<br>' + a.icon : '🔒<br><small style="font-size:10px;font-weight:900">Sv ' + lv + '</small>'}</div>`; }).join('');
+  if (G.nextBiome == null || !openBiomes().includes(G.nextBiome)) G.nextBiome = pick(openBiomes());
+  const nb = BIOMES[G.nextBiome], na = itemById('animal', BIOME_ANIMAL[nb.key]); setAnimal(na.id);
+  $('mNext').innerHTML = `Sıradaki: <b>${nb.flag} ${nb.name} • ${na.icon} ${na.name}</b><br>` + (nu ? `Sv ${nu.lv}: ${nu.list.map(x => x.item.icon + ' ' + x.item.name).join(', ')}` : 'Tüm haritalar açıldı!');
   const cp = P.checkpoint && P.checkpoint.bolum > 1;
   $('playBtn').textContent = cp ? `▶ BÖLÜM ${P.checkpoint.bolum}` : 'OYNA'; $('newBtn').classList.toggle('hidden', !cp);
 }
@@ -2710,7 +2818,6 @@ function renderGarage() {
         P.coins -= it.price; P.owned[gTab].push(it.id); buyArm = null; Audio.levelUp(); flash('#fff3a0', .7, 500); banner(`${it.icon} ${it.name} senin!`, 'gold', 1800);
       }
       if (gTab === 'power') P[it.id] = own ? !P[it.id] : true; else P[gTab] = it.id;
-      if (gTab === 'animal') { P.icon = it.icon; P._animalSet = true; }
       Store.save(); if (gTab === 'animal') setAnimal(P.animal); else equip(); garagePreview(); if (own) Audio.pickup();
       $('itemInfo').textContent = `${it.icon} ${it.name}: ${it.desc}`; renderGarage();
     };
@@ -2784,13 +2891,13 @@ function startGame(cont) {
   Audio.init(); Device.fullscreen(); Device.keepAwake();
   [...world.children].forEach(o => world.remove(o)); clearTransient();
   G.mode = P.mode === 'yetiskin' ? 'yetiskin' : 'cocuk';
-  const ob = openBiomes(); let b = pick(ob.length ? ob : [0]);
+  const ob = openBiomes(); let b = G.nextBiome != null && ob.includes(G.nextBiome) ? G.nextBiome : pick(ob.length ? ob : [0]); G.nextBiome = null;
   const cp0 = cont && P.checkpoint && P.checkpoint.bolum > 1 ? P.checkpoint : null; if (cp0) b = clamp(cp0.biomeIdx, 0, BIOMES.length - 1);
   G.animal = BIOME_ANIMAL[BIOMES[b].key] || 'tavsan'; resetRun(); setAnimal(G.animal);
   G.state = 'play'; playerRoot.rotation.set(0, 0, 0); playerRoot.position.set(0, 0, 0); world.rotation.y = 0;
   const cp = cont && P.checkpoint && P.checkpoint.bolum > 1 ? P.checkpoint : null;
   if (cp) { b = clamp(cp.biomeIdx, 0, BIOMES.length - 1); G.bolum = cp.bolum; G.stage = cp.stage || 0; } else P.checkpoint = null;
-  $('bolum').textContent = 'Bölüm ' + G.bolum; $('abFill').style.width = '0%'; $('abil').classList.remove('full');
+  hudBolum(); $('abFill').style.width = '0%'; $('abil').classList.remove('full');
   const bb = BIOMES[b];
   G.biomeIdx = b; G.tod = randomTod(); G.weather = randomWeather(bb);
   setBiome(b, { weather: G.weather, tod: G.tod });
@@ -2897,7 +3004,7 @@ const Cloud = {
   },
   async setPin(pin) { this.pin = pin; if (this.ready) await this.fs.setDoc(this.doc('meta', 'settings'), { pin }, { merge: true }).catch(() => {}); },
   sendIdea(text) {
-    const it = { pid: P ? P.id : '', name: P ? P.name : '', icon: P ? P.icon : '', text, ts: Date.now(), ver: 'v12' };
+    const it = { pid: P ? P.id : '', name: P ? P.name : '', icon: P ? P.icon : '', text, ts: Date.now(), ver: 'v14' };
     (Store.d.ideas || (Store.d.ideas = [])).push(it); Store.save(); this.flushIdeas();
   },
   flushIdeas() {
@@ -3029,6 +3136,7 @@ if ($('shareBest')) $('shareBest').onclick = () => share(`🏆 Orman Koşusu\n${
 document.addEventListener('visibilitychange', () => { if (document.hidden) flushTime(); else if (Cloud.ready) Cloud.pullPlayers(); });
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { gTab = b.dataset.tab; renderGarage(); garagePreview(); Audio.lane(); });
 $('pauseBtn').onclick = e => { e.stopPropagation(); pauseGame(); };
+['touchstart', 'touchend', 'mousedown'].forEach(ev => $('abBtn').addEventListener(ev, e => { e.stopPropagation(); if (ev !== 'touchstart') { e.preventDefault(); useAbility(); } }, { passive: false }));
 $('resumeBtn').onclick = () => resumeGame();
 $('pSettingsBtn').onclick = () => goSettings();
 $('pMenuBtn').onclick = () => { if (Audio.ctx) Audio.ctx.resume(); goMenu(); };
@@ -3053,6 +3161,7 @@ function warmUp() {
   tries(() => buildTunnel(true, 0x6a6056)); tries(() => buildPlatform(2.3, 28, 0x8a5a2a, 0xb07a45)); tries(() => buildLavaStrip(9.4));
   tries(() => { const g = new THREE.Group(); g.add(mesh(geo('sgb', () => new THREE.PlaneGeometry(3.2, 1.6)), new THREE.MeshBasicMaterial({ map: signTex('7', -1) }))); return g; });
   Object.keys(MODELS).forEach(k => tries(() => makeModel(k)));
+  BIOMES.forEach(b => { if (b.herd) for (let i = 0; i < 4; i++) { const o = makeBeast(b.herd, .95); if (o.userData.poolKey) poolPut(o); } });
   Object.keys(FOOD).forEach(k => tries(() => foodProto(k).clone()));
   tries(() => { const g = new THREE.Group(); fxRing(new V3(0, 0, 0)); return g; });
   scene.add(grp);
@@ -3078,6 +3187,7 @@ window.addEventListener('keydown', e => {
   if (e.key === 'ArrowUp' || e.key === 'w' || e.key === ' ') jump();
   if (e.key === 'ArrowDown' || e.key === 's') slide();
   if (e.key === 'p') pauseGame();
+  if (e.key === 'e' || e.key === 'q') useAbility();
 });
 
 /* =====================================================================
@@ -3093,6 +3203,10 @@ function frame() {
   else if (G.state !== 'paused') updateIdle(dt);
   if (G.state !== 'paused') { applyEnv(dt); updateCamera(dt); }
   renderer.render(scene, camera);
+  if (G.state === 'play') { const Q = G.perf || (G.perf = { n: 0, t: 0 }); Q.n++; Q.t += clock.elapsedTime - (Q.last || clock.elapsedTime); Q.last = clock.elapsedTime;
+    if (Q.t > 2.5) { const fps = Q.n / Q.t; Q.n = 0; Q.t = 0; const pr = renderer.getPixelRatio();
+      if (fps < 42 && pr > 1.01) { renderer.setPixelRatio(Math.max(1, pr - .25)); onResize(); }
+      else if (fps < 34 && Store.d.set.hq) { Store.d.set.hq = false; applyQuality(); Store.save(); } } }
 }
 applyQuality();
 Device.setup();
